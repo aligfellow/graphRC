@@ -117,6 +117,7 @@ True: Bond change (11, 12) found in results.
   - So in theory this could identify whether the correct TS mode has been identidied in a high throughput search if the atom indices are known (or available automatically)
 
 ## Minimal Examples 
+### Example 1
 Sample python use in examples/ folder:
 ![sn2 imaginary mode](images/sn2.gif)
     - visualisation using [v.2.0](https://github.com/briling/v) by [**Ksenia Briling @briling**](https://github.com/briling) 
@@ -136,7 +137,7 @@ Bond (0, 5): Δ = 1.356 Å, Initial Length = 1.952 Å
 ```
 The magnitude and change (Δ) of the modes is somewhat meaningless, though this should report the initial value of the 1st frame (or reference frame).
 
-Another example:
+### Example 2
 ![dihedral imaginary mode](images/dihedral.gif)
 ```
 > vib_analysis dihedral.v000.xyz
@@ -166,7 +167,6 @@ Bond (0, 1): Δ = 1.333 Å, Initial Length = 2.498 Å
 ===== Significant Angle Changes =====
 Angle (11, 10, 12): Δ = 12.078°, Initial Value = 129.135°
 ```
-
 ## More detailed information
 - the `--all` flag turns on reporting of coupled internal coordinate changes, including:
    - Default output:
@@ -184,7 +184,8 @@ Angle (11, 10, 12): Δ = 12.078°, Initial Value = 129.135°
   - where one of these atoms is involved in a *significant* bond change, the angle is classed as minor due to the coupled nature of the internal coordinates
      - same applies for dihedrals
 
-## Further Examples
+### Example 3
+
 Complex transformation with BIMP catalysed rearrangement
 ![bimp rearrangement](images/bimp.gif)
 ```

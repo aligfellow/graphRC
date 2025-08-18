@@ -97,7 +97,7 @@ ORCA_PATH = os.system("which orca")
 results = run_vib_analysis(
         input_file=orca_out,
         parse_orca=True,
-        mode=6,
+        mode=0,
         # print_output=True,
         orca_path=ORCA_PATH,
     )

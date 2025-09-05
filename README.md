@@ -237,7 +237,7 @@ Dihedral (31, 13, 14, 32): Δ = 29.557 degrees, Initial Value = 185.910 degrees
 
 Note: These dihedrals are not directly dependent on other changes however they may be artefacts of other motion in the TS.
 ```
-
+### Example 5 
 Mn catalyst hydrogenation
 ![Mn hydrogenation](images/mn.gif)
 ```bash
@@ -276,6 +276,7 @@ Note: These dihedrals are dependent on other changes and may not be significant 
 - parsing the output prints the imaginary modes from the output file
 - gaussian parsing (with [cclib](https://github.com/cclib/cclib) takes a *zero indexed mode* `--mode 0`
 
+### ORCA parsing
 Orca output parsing is also possible with `--parse_cclib` and separately with `--parse_orca` 
   - it appears that cclib cannot yet deal with orca_6.1.0 
 ```bash

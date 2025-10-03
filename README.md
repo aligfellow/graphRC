@@ -8,7 +8,7 @@ This can be installed via `pypi` with:
 ```bash
 pip install vib_analysis
 ```
-Or locally by:
+Or locally (most up to data) by:
 ```bash
 git clone https://github.com/aligfellow/vib_analysis.git
 cd vib_analysis

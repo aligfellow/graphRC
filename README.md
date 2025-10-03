@@ -183,12 +183,16 @@ Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  39.557 °,  Initial = 359.998 °
 ```bash
 > vib_analysis sn2_large.v000.xyz
 
-Analysed vibrational trajectory from sn2_large.v000.xyz:
+Analysed vibrational trajectory from examples/data/sn2_large.v000.xyz:
 
 =========================== Significant Bond Changes ===========================
+Bond (0, 21)  [C-N]  Δ =   2.388 Å,  Initial =   2.158 Å
+Bond (0, 1)   [C-I]  Δ =   1.878 Å,  Initial =   2.563 Å
 
 ========================= Significant Dihedral Changes =========================
+Dihedral (43, 22, 23, 24)  [H-C-C-O]  Δ =  23.179 °,  Initial = 298.523 °
 
+Note: These dihedrals are not directly dependent on other changes however they may be artefacts of motion in the TS.
 ```
 
 ### Example 4 - more involved 

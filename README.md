@@ -34,18 +34,10 @@ comment line
 
 >[!IMPORTANT]
 >- **atom indices are zero indexed** (though the viewer used below is *one indexed*)
-     
-## Improvements
-### Complete
- - ~gaussian output parsing with cclib~
- - ~orca output parsing with cclib and orca_pltvib~
- - ~sort frequency printing in parse_orca where there are multiple FREQUENCY blocks~
- - ~improve/check the python interface and usage in the .ipynb examples~
 
 ### Future addition?
->[!TIP]
->- add atom symbol printing in the output
->- suggestions?
+>[!TIP]  
+> Suggestions?
 
 ## Command line interface
 ```bash

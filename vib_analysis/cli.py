@@ -72,7 +72,7 @@ def run_vib_analysis(
     bond_tolerance=1.5,
     angle_tolerance=1.1,
     dihedral_tolerance=1.0,
-    bond_threshold=0.5,
+    bond_threshold=0.4,
     angle_threshold=10.0,
     dihedral_threshold=20.0,
     ts_frame=False,
@@ -132,7 +132,7 @@ def main():
     # Analysis parameters
     parser.add_argument("--bond_tolerance", type=float, default=1.4, help="Bond detection tolerance multiplier. Default: 1.4")
     parser.add_argument("--angle_tolerance", type=float, default=1.1, help="Angle detection tolerance multiplier. Default: 1.1")
-    parser.add_argument("--dihedral_tolerance", type=float, default=1.1, help="Dihedral detection tolerance multiplier. Default: 1.1")
+    parser.add_argument("--dihedral_tolerance", type=float, default=1.0, help="Dihedral detection tolerance multiplier. Default: 1.0")
     parser.add_argument("--bond_threshold", type=float, default=0.4, help="Minimum internal coordinate change to report. Default: 0.4")
     parser.add_argument("--angle_threshold", type=float, default=10.0, help="Minimum angle change in degrees to report. Default: 10")
     parser.add_argument("--dihedral_threshold", type=float, default=20.0, help="Minimum dihedral change in degrees to report. Default: 20")

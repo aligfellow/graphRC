@@ -125,7 +125,7 @@ def calculate_dihedral(frame, i, j, k, l):
     return round(float(frame.get_dihedral(i, j, k, l, mic=True)),3)
 
 
-def calculate_internal_changes(frames, ts_frame, internal_coords, bond_threshold=0.5, angle_threshold=10.0, dihedral_threshold=20.0, bond_stability_threshold=0.2, angle_tolerance=1.05):
+def calculate_internal_changes(frames, ts_frame, internal_coords, bond_threshold=0.4, angle_threshold=10.0, dihedral_threshold=20.0, bond_stability_threshold=0.2, angle_tolerance=1.1):
     """Tracks changes in internal coordinates across trajectory."""
     num_frames = len(frames)
     bond_changes = {}
@@ -230,10 +230,10 @@ def select_most_diverse_frames(frames, top_n=2):
 
 def analyze_internal_displacements(
     xyz_file,
-    bond_tolerance=1.2,
+    bond_tolerance=1.4,
     angle_tolerance=1.1,
     dihedral_tolerance=1.0,
-    bond_threshold=0.5,
+    bond_threshold=0.4,
     angle_threshold=10.0,
     dihedral_threshold=20.0,
     ts_frame=0,  # Default to first frame

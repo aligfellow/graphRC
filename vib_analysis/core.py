@@ -232,6 +232,10 @@ def analyze_internal_displacements(
         dihedral_threshold=dihedral_threshold,
     )
 
+    first_frame = frames[0]
+    symbols = first_frame.get_chemical_symbols()
+    atom_index_map = {i: s for i, s in enumerate(symbols)}
+
     return {
         "bond_changes": bond_changes,
         "angle_changes": angle_changes,
@@ -239,5 +243,6 @@ def analyze_internal_displacements(
         "dihedral_changes": unique_dihedrals,
         "minor_dihedral_changes": dependent_dihedrals,
         "frame_indices": selected_indices,
+        "atom_index_map": atom_index_map,
     }
 

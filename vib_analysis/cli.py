@@ -4,34 +4,53 @@ from .core import analyze_internal_displacements, read_xyz_trajectory, calculate
 from .convert import parse_cclib_output, get_orca_frequencies, convert_orca, get_orca_pltvib_path
 
 def print_analysis_results(results, args):
-    if results['bond_changes']:
-        print("\n===== Significant Bond Changes =====")
-        for bond, (change, initial_value) in sorted(results['bond_changes'].items(), key=lambda x: -x[1][0]):
-            print(f"Bond {bond}: Δ = {change:.3f} Å, Initial = {initial_value:.3f} Å")
+    atom_map = results.get('atom_index_map')
 
-    if results['angle_changes']:
-        print("\n===== Significant Angle Changes =====")
-        for angle, (change, initial_value) in sorted(results['angle_changes'].items(), key=lambda x: -x[1][0]):
-            print(f"Angle {angle}: Δ = {change:.3f}°, Initial = {initial_value:.3f}°")
+    # --- added helper for consistent-width headings ---
+    def heading(title, total=80, fill='='):
+        inner = f" {title} "
+        if len(inner) >= total:
+            print(f"\n{inner}")
+        else:
+            pad = total - len(inner)
+            left = pad // 2
+            right = pad - left
+            print("\n" + fill * left + inner + fill * right)
 
-    if results['dihedral_changes']:
-        print("\n===== Significant Dihedral Changes =====")
-        for dihedral, (change, initial_value) in sorted(results['dihedral_changes'].items(), key=lambda x: -x[1][0]):
-            print(f"Dihedral {dihedral}: Δ = {change:.3f}°, Initial = {initial_value:.3f}°")
-        if results['bond_changes'] or results['angle_changes']:
-            print("\nNote: These dihedrals are not directly dependent on other changes however they may be artefacts of other motion in the TS.")
+    def section(title, data_dict, kind, unit):
+        if not data_dict:
+            return
+        # Build entries first
+        entries = []
+        for indices, (change, initial_value) in sorted(data_dict.items(), key=lambda x: -x[1][0]):
+            idx_str = f"{kind} {indices}"
+            if atom_map:
+                sym_str = "[" + "-".join(atom_map[i] for i in indices) + "]"
+            else:
+                sym_str = ""
+            entries.append((idx_str, sym_str, change, initial_value))
+        # Compute widths
+        idx_w = max(len(e[0]) for e in entries)
+        sym_w = max((len(e[1]) for e in entries), default=0)
+        # Header
+        heading(title)
+        # Lines
+        for idx_str, sym_str, change, initial_value in entries:
+            print(f"{idx_str:<{idx_w}}  {sym_str:<{sym_w}}  Δ = {change:7.3f} {unit},  Initial = {initial_value:7.3f} {unit}")
+
+    section("Significant Bond Changes", results['bond_changes'], "Bond", "Å")
+    section("Significant Angle Changes", results['angle_changes'], "Angle", "°")
+    section("Significant Dihedral Changes", results['dihedral_changes'], "Dihedral", "°")
+
+    if results['dihedral_changes'] and (results['bond_changes'] or results['angle_changes']):
+        print("\nNote: These dihedrals are not directly dependent on other changes however they may be artefacts of motion in the TS.")
 
     if args.all:
+        section("Minor Angle Changes", results['minor_angle_changes'], "Angle", "°")
         if results['minor_angle_changes']:
-            print("\n===== Minor Angle Changes =====")
-            for angle, (change, initial_value) in sorted(results['minor_angle_changes'].items(), key=lambda x: -x[1][0]):
-                print(f"Angle {angle}: Δ = {change:.3f}°, Initial = {initial_value:.3f}°")
             print("\nNote: These angles are dependent on other changes and may not be significant on their own.")
-
+        section("Minor Dihedral Changes", results['minor_dihedral_changes'], "Dihedral", "°")
         if results['minor_dihedral_changes']:
-            print("\n===== Less Significant Dihedral Changes =====")
-            for dihedral, (change, initial_value) in sorted(results['minor_dihedral_changes'].items(), key=lambda x: -x[1][0]):
-                print(f"Dihedral {dihedral}: Δ = {change:.3f}°, Initial = {initial_value:.3f}°")
             print("\nNote: These dihedrals are dependent on other changes and may not be significant on their own.")
 
 def print_first_5_nonzero_modes(freqs, args):
@@ -60,8 +79,8 @@ def run_vib_analysis(
     report_all=False,
     print_output=False,
     orca_path=None,
-    ):
-    
+):
+
     if parse_cclib or parse_orca:
         if mode is None:
             raise ValueError("Mode index is required for Gaussian/ORCA conversion")
@@ -75,41 +94,30 @@ def run_vib_analysis(
                 pltvib_path = os.path.join(os.path.dirname(orca_path), 'orca_pltvib')
             freqs = get_orca_frequencies(input_file)
             trj_file = convert_orca(input_file, mode, pltvib_path=pltvib_path)
+        trj_path = trj_file
 
         if print_output:
             print_first_5_nonzero_modes(freqs, argparse.Namespace(parse_orca=parse_orca))
-
-        results = analyze_internal_displacements(
-            trj_file,
-            bond_tolerance=bond_tolerance,
-            angle_tolerance=angle_tolerance,
-            dihedral_tolerance=dihedral_tolerance,
-            bond_threshold=bond_threshold,
-            angle_threshold=angle_threshold,
-            dihedral_threshold=dihedral_threshold,
-            ts_frame=ts_frame,
-        )
-
-        if print_output:
-            print(f"\nAnalysed vibrational trajectory (Mode {mode} with frequency {freqs[mode]} cm**-1):")
-            print_analysis_results(results, argparse.Namespace(all=report_all))
-
     else:
-        # XYZ direct analysis
-        results = analyze_internal_displacements(
-            input_file,
-            bond_tolerance=bond_tolerance,
-            angle_tolerance=angle_tolerance,
-            dihedral_tolerance=dihedral_tolerance,
-            bond_threshold=bond_threshold,
-            angle_threshold=angle_threshold,
-            dihedral_threshold=dihedral_threshold,
-            ts_frame=ts_frame,
-        )
+        trj_file = input_file
 
-        if print_output:
-            print(f"\nAnalysed vibrational trajectory from {input_file}:")
-            print_analysis_results(results, argparse.Namespace(all=report_all))
+    results = analyze_internal_displacements(
+        trj_file,
+        bond_tolerance=bond_tolerance,
+        angle_tolerance=angle_tolerance,
+        dihedral_tolerance=dihedral_tolerance,
+        bond_threshold=bond_threshold,
+        angle_threshold=angle_threshold,
+        dihedral_threshold=dihedral_threshold,
+        ts_frame=ts_frame,
+    )
+
+    if print_output and (parse_cclib or parse_orca):
+        print(f"\nAnalysed vibrational trajectory (Mode {mode} with frequency {freqs[mode]} cm**-1):")
+        print_analysis_results(results, argparse.Namespace(all=report_all))
+    elif print_output:
+        print(f"\nAnalysed vibrational trajectory from {trj_file}:")
+        print_analysis_results(results, argparse.Namespace(all=report_all))
 
     return results
 

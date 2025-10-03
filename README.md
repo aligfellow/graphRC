@@ -83,6 +83,18 @@ options:
   --ts_frame            TS frame for distances and angles in the TS. Default: 0 (first frame)
   --all                 Report all changes in angles and dihedrals.
 ```                 
+## Atom Symbols in Output
+Each reported internal coordinate includes element symbols:
+```
+Bond (11, 12) [C-O]: Δ = 1.432 Å, Initial Length = 2.064 Å
+Angle (13, 12, 29) [C-N-H]: Δ = 11.020°, Initial Value = 122.116°
+Dihedral (31, 13, 14, 32) [C-C-C-C]: Δ = 29.557°, Initial Value = 185.910°
+```
+The results dictionary contains:
+```python
+results['atom_index_map']  # { index: symbol }
+```
+
 ## Python interface
 See examplese/examples.ipynb
 This function will return a dictionary of the results, and printing can be turned on to produce the same as the CLI
@@ -90,16 +102,12 @@ For example:
 ```python
 from vib_analysis import run_vib_analysis
 
-orca_out = 'data/bimp.out'
-ORCA_PATH = os.system("which orca")
+orca_out = 'data/bimp.v000.xyz'
 # ORCA_PATH = '/path/to/orca"
 
 results = run_vib_analysis(
         input_file=orca_out,
-        parse_orca=True,
-        mode=0,
         # print_output=True,
-        orca_path=ORCA_PATH,
     )
 
 print(results)
@@ -110,7 +118,7 @@ if theoretical_bond_change in results['bond_changes']:
 ```
 Outputs:
 ```python
-{'bond_changes': {(11, 12): (1.432, 2.064)}, 'angle_changes': {}, 'minor_angle_changes': {(13, 12, 29): (11.02, 122.116)}, 'dihedral_changes': {(31, 13, 14, 32): (29.558, 185.91), (32, 14, 15, 20): (30.937, 350.826)}, 'minor_dihedral_changes': {(2, 1, 10, 11): (35.025, 194.336), (29, 12, 13, 31): (48.971, 17.521)}, 'frame_indices': [5, 14]}
+{'bond_changes': {(11, 12): (2.052, 2.064)}, 'angle_changes': {}, 'minor_angle_changes': {(13, 12, 29): (14.436, 122.116), (29, 12, 30): (12.54, 117.79)}, 'dihedral_changes': {(32, 14, 15, 20): (43.451, 350.826)}, 'minor_dihedral_changes': {(2, 1, 10, 11): (49.302, 194.336), (29, 12, 13, 31): (67.358, 17.521)}, 'frame_indices': [5, 15], 'atom_index_map': {0: 'O', 1: 'C', ... }}
 True: Bond change (11, 12) found in results.
 ```
   - This can be used to check for a known vibrational mode (theoretical_bond_change) in `results['bond_changes']`
@@ -120,14 +128,14 @@ True: Bond change (11, 12) found in results.
 - the `--all` flag turns on reporting of coupled internal coordinate changes, including:
    - Default output:
   ```bash
-  ===== Significant Bond Changes =====
-  ===== Significant Angle Changes =====
-  ===== Significant Dihedral Changes =====
+  =========================== Significant Bond Changes ===========================
+  ========================== Significant Angle Changes ===========================
+  ========================= Significant Dihedral Changes =========================
   ```
     - additional output - not necessarily insignificant changes in internal coordinates but strongly coupled
   ```bash
-  ===== Minor Angle Changes =====
-  ===== Less Significant Dihedral Changes =====   
+  ============================= Minor Angle Changes ==============================
+  ============================ Minor Dihedral Changes ============================  
   ```
   - *i.e.* where a bond is changed, the angles around it will be altered across a vibrational trajectory and those angles would be significant enough to report as a change
   - where one of these atoms is involved in a *significant* bond change, the angle is classed as minor due to the coupled nature of the internal coordinates
@@ -146,11 +154,11 @@ From the command line:
  # OR
 > vib_analysis sn2.out --parse_orca --mode 0
 
-Analysed vibrational trajectory from sn2.v000.xyz:
+Analysed vibrational trajectory from examples/data/sn2.v000.xyz:
 
-===== Significant Bond Changes =====
-Bond (0, 4): Δ = 1.584 Å, Initial Length = 1.717 Å
-Bond (0, 5): Δ = 1.356 Å, Initial Length = 1.952 Å
+=========================== Significant Bond Changes ===========================
+Bond (0, 4)  [C-F]   Δ =   1.584 Å,  Initial =   1.717 Å
+Bond (0, 5)  [C-Cl]  Δ =   1.355 Å,  Initial =   1.952 Å
 ```
 The magnitude and change (Δ) of the modes is somewhat meaningless, though this should report the initial value of the 1st frame (or reference frame).
 
@@ -161,28 +169,26 @@ The magnitude and change (Δ) of the modes is somewhat meaningless, though this 
 # OR
 > vib_analysis dihedral.out --parse_orca --mode 0
 
-Analysed vibrational trajectory from dihedral.v000.xyz:
+Analysed vibrational trajectory from examples/data/dihedral.v000.xyz:
 
-===== Significant Dihedral Changes =====
-Dihedral (6, 0, 3, 7): Δ = 39.556 degrees, Initial Value = 359.998 degrees
+========================= Significant Dihedral Changes =========================
+Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  39.557 °,  Initial = 359.998 °
 ```
 
 >[!NOTE]
 >The bond changes are hierarchical, so an angle with a large change as a consequence of a bonding change is not reported as a *significant* change.
 
 ### Example 3
-![larger molecule sn2](images/large_sn2.gif)
+![larger molecule sn2](images/sn2_large.gif)
 ```bash
-> vib_analysis large_sn2.v000.xyz
+> vib_analysis sn2_large.v000.xyz
 
-Analysed vibrational trajectory from large_sn2.v000.xyz:
+Analysed vibrational trajectory from sn2_large.v000.xyz:
 
-===== Significant Bond Changes =====
-Bond (1, 9): Δ = 1.512 Å, Initial Length = 1.668 Å
-Bond (0, 1): Δ = 1.333 Å, Initial Length = 2.498 Å
+=========================== Significant Bond Changes ===========================
 
-===== Significant Angle Changes =====
-Angle (11, 10, 12): Δ = 12.078°, Initial Value = 129.135°
+========================= Significant Dihedral Changes =========================
+
 ```
 
 ### Example 4 - more involved 
@@ -193,27 +199,25 @@ Complex transformation with BIMP catalysed rearrangement
 ```bash
 > vib_analysis bimp.v000.xyz --all 
 
-Analysed vibrational trajectory from bimp.v000.xyz:
+Analysed vibrational trajectory from examples/data/bimp.v000.xyz:
 
-===== Significant Bond Changes =====
-Bond (11, 12): Δ = 1.432 Å, Initial Length = 2.064 Å
+=========================== Significant Bond Changes ===========================
+Bond (11, 12)  [O-C]  Δ =   2.052 Å,  Initial =   2.064 Å
 
-===== Significant Dihedral Changes =====
-Dihedral (32, 14, 15, 20): Δ = 30.937°, Initial Value = 350.826°
-Dihedral (31, 13, 14, 32): Δ = 29.557°, Initial Value = 185.910°
+========================= Significant Dihedral Changes =========================
+Dihedral (32, 14, 15, 20)  [H-C-C-C]  Δ =  43.451 °,  Initial = 350.826 °
 
-Note: These dihedrals are not directly dependent on other changes however they may be artefacts of other motion in the TS.
+Note: These dihedrals are not directly dependent on other changes however they may be artefacts of motion in the TS.
 
-===== Minor Angle Changes =====
-Angle (13, 12, 29): Δ = 11.020°, Initial Value = 122.116°
+============================= Minor Angle Changes ==============================
+Angle (13, 12, 29)  [C-C-H]  Δ =  14.436 °,  Initial = 122.116 °
+Angle (29, 12, 30)  [H-C-H]  Δ =  12.540 °,  Initial = 117.790 °
 
 Note: These angles are dependent on other changes and may not be significant on their own.
 
-===== Less Significant Dihedral Changes =====
-Dihedral (29, 12, 13, 31): Δ = 48.971°, Initial Value = 17.521°
-Dihedral (2, 1, 10, 11): Δ = 35.026°, Initial Value = 194.336°
-
-Note: These dihedrals are dependent on other changes and may not be significant on their own.
+============================ Minor Dihedral Changes ============================
+Dihedral (29, 12, 13, 31)  [H-C-C-N]  Δ =  67.358 °,  Initial =  17.521 °
+Dihedral (2, 1, 10, 11)    [N-C-C-O]  Δ =  49.302 °,  Initial = 194.336 °
 ```
 ![bimp rearrangement zoom](images/bimp_zoom.gif)
 
@@ -223,20 +227,25 @@ Note: These dihedrals are dependent on other changes and may not be significant 
 - also picking up motion of the thiourea protons that have strong NCIs with the substrate
 
 ```bash
-> vib_analysis bimp.v000.xyz --bond_threshold=0.2
+> vib_analysis examples/data/bimp.v000.xyz  --bond_threshold 0.2
 
-Analysed vibrational trajectory from bimp.v000.xyz:
+Analysed vibrational trajectory from examples/data/bimp.v000.xyz:
 
-===== Significant Bond Changes =====
-Bond (11, 12): Δ = 1.432 Å, Initial Length = 2.064 Å
-Bond (10, 11): Δ = 0.204 Å, Initial Length = 1.287 Å
+=========================== Significant Bond Changes ===========================
+Bond (11, 12)  [O-C]  Δ =   2.052 Å,  Initial =   2.064 Å
+Bond (10, 11)  [C-O]  Δ =   0.285 Å,  Initial =   1.287 Å
+Bond (1, 10)   [C-C]  Δ =   0.228 Å,  Initial =   1.449 Å
+Bond (12, 13)  [C-C]  Δ =   0.213 Å,  Initial =   1.388 Å
 
-===== Significant Dihedral Changes =====
-Dihedral (32, 14, 15, 20): Δ = 30.937 degrees, Initial Value = 350.826 degrees
-Dihedral (31, 13, 14, 32): Δ = 29.557 degrees, Initial Value = 185.910 degrees
+========================= Significant Dihedral Changes =========================
+Dihedral (32, 14, 15, 20)  [H-C-C-C]  Δ =  43.451 °,  Initial = 350.826 °
 
-Note: These dihedrals are not directly dependent on other changes however they may be artefacts of other motion in the TS.
+Note: These dihedrals are not directly dependent on other changes however they may be artefacts of motion in the TS.
 ```
+>[!WARNING]
+> This still misses the C-C bond change of 10-14 due to the internal coordinate constructions
+> Work in progress
+
 ### Example 5 
 Mn catalyst hydrogenation
 ![Mn hydrogenation](images/mn.gif)
@@ -251,30 +260,30 @@ First 5 non-zero vibrational frequencies:
   Mode 3: 32.5 cm**-1
   Mode 4: 36.7 cm**-1
 
-Analysed vibrational trajectory (Mode 0 with frequency -748.483 cm**-1):
+Analysed vibrational trajectory from examples/data/mn.v000.xyz:
 
-===== Significant Bond Changes =====
-Bond (5, 65): Δ = 1.776 Å, Initial = 1.319 Å
-Bond (65, 66): Δ = 1.665 Å, Initial = 1.203 Å
-Bond (64, 66): Δ = 0.919 Å, Initial = 1.711 Å
-Bond (1, 65): Δ = 0.875 Å, Initial = 2.591 Å
-Bond (1, 64): Δ = 0.649 Å, Initial = 1.898 Å
+=========================== Significant Bond Changes ===========================
+Bond (5, 65)   [N-H]   Δ =   1.776 Å,  Initial =   1.319 Å
+Bond (65, 66)  [H-O]   Δ =   1.665 Å,  Initial =   1.203 Å
+Bond (64, 66)  [H-O]   Δ =   0.920 Å,  Initial =   1.711 Å
+Bond (1, 65)   [Mn-H]  Δ =   0.875 Å,  Initial =   2.591 Å
+Bond (1, 64)   [Mn-H]  Δ =   0.649 Å,  Initial =   1.898 Å
 
-===== Minor Angle Changes =====
-Angle (5, 1, 63): Δ = 16.471°, Initial = 96.799°
-Angle (61, 1, 63): Δ = 15.528°, Initial = 81.202°
-Angle (2, 1, 63): Δ = 13.033°, Initial = 171.266°
+============================= Minor Angle Changes ==============================
+Angle (5, 1, 63)   [N-Mn-H]  Δ =  16.471 °,  Initial =  96.799 °
+Angle (61, 1, 63)  [C-Mn-H]  Δ =  15.528 °,  Initial =  81.202 °
+Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
 
 Note: These angles are dependent on other changes and may not be significant on their own.
 
-===== Less Significant Dihedral Changes =====
-Dihedral (63, 1, 2, 36): Δ = 81.780°, Initial = 283.248°
+============================ Minor Dihedral Changes ============================
+Dihedral (63, 1, 2, 7)  [H-Mn-P-C]  Δ =  81.780 °,  Initial = 158.994 °
 
 Note: These dihedrals are dependent on other changes and may not be significant on their own.
 ```
 - this correctly identifies bonding changes of this transition state
 - parsing the output prints the imaginary modes from the output file
-- gaussian parsing (with [cclib](https://github.com/cclib/cclib) takes a *zero indexed mode* `--mode 0`
+- gaussian parsing with [cclib](https://github.com/cclib/cclib)
 
 ### ORCA parsing
 Orca output parsing is also possible with `--parse_cclib` and separately with `--parse_orca` 
@@ -289,10 +298,10 @@ First 5 non-zero vibrational frequencies:
   Mode 3: 738.1 cm**-1
   Mode 4: 940.0 cm**-1
 
-Analysed vibrational trajectory (Mode 0 with frequency -388.51 cm**-1):
+Analysed vibrational trajectory from examples/data/dihedral.v000.xyz:
 
-===== Significant Dihedral Changes =====
-Dihedral (6, 0, 3, 7): Δ = 39.556°, Initial = 359.998°
+========================= Significant Dihedral Changes =========================
+Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  39.557 °,  Initial = 359.998 °
 ```
 
 And again, with the bimp example:
@@ -306,27 +315,23 @@ First 5 non-zero vibrational frequencies:
   Mode 3: 13.3 cm**-1
   Mode 4: 15.8 cm**-1
 
-Analysed vibrational trajectory (Mode 0 with frequency -333.88 cm**-1):
+Analysed vibrational trajectory from examples/data/bimp.v000.xyz:
 
-===== Significant Bond Changes =====
-Bond (11, 12): Δ = 1.432 Å, Initial = 2.064 Å
-Bond (10, 11): Δ = 0.204 Å, Initial = 1.287 Å
+=========================== Significant Bond Changes ===========================
+Bond (11, 12)  [O-C]  Δ =   2.052 Å,  Initial =   2.064 Å
+Bond (10, 11)  [C-O]  Δ =   0.285 Å,  Initial =   1.287 Å
+Bond (1, 10)   [C-C]  Δ =   0.228 Å,  Initial =   1.449 Å
+Bond (12, 13)  [C-C]  Δ =   0.213 Å,  Initial =   1.388 Å
 
-===== Significant Dihedral Changes =====
-Dihedral (32, 14, 15, 20): Δ = 30.937°, Initial = 350.826°
-Dihedral (31, 13, 14, 32): Δ = 29.557°, Initial = 185.910°
+========================= Significant Dihedral Changes =========================
+Dihedral (32, 14, 15, 20)  [H-C-C-C]  Δ =  43.451 °,  Initial = 350.826 °
 
-Note: These dihedrals are not directly dependent on other changes however they may be artefacts of other motion in the TS.
+Note: These dihedrals are not directly dependent on other changes however they may be artefacts of motion in the TS.
 
-===== Minor Angle Changes =====
-Angle (13, 12, 29): Δ = 11.020°, Initial = 122.116°
+============================= Minor Angle Changes ==============================
+Angle (29, 12, 30)  [H-C-H]  Δ =  12.540 °,  Initial = 117.790 °
 
 Note: These angles are dependent on other changes and may not be significant on their own.
-
-===== Less Significant Dihedral Changes =====
-Dihedral (29, 12, 13, 31): Δ = 48.971°, Initial = 17.521°
-
-Note: These dihedrals are dependent on other changes and may not be significant on their own.
 ```
 - this *also works* using the command `vib_analysis bimp.out --parse_cclib --mode 0 --bond_threshold 0.2 --all`
   - this output used `orca_6.0.1`

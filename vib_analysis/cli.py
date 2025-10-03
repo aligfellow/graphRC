@@ -94,7 +94,6 @@ def run_vib_analysis(
                 pltvib_path = os.path.join(os.path.dirname(orca_path), 'orca_pltvib')
             freqs = get_orca_frequencies(input_file)
             trj_file = convert_orca(input_file, mode, pltvib_path=pltvib_path)
-        trj_path = trj_file
 
         if print_output:
             print_first_5_nonzero_modes(freqs, argparse.Namespace(parse_orca=parse_orca))
@@ -131,10 +130,10 @@ def main():
     parser.add_argument("--orca_path", type=str, help="Path to ORCA binary")
 
     # Analysis parameters
-    parser.add_argument("--bond_tolerance", type=float, default=1.5, help="Bond detection tolerance multiplier. Default: 1.5")
+    parser.add_argument("--bond_tolerance", type=float, default=1.4, help="Bond detection tolerance multiplier. Default: 1.4")
     parser.add_argument("--angle_tolerance", type=float, default=1.1, help="Angle detection tolerance multiplier. Default: 1.1")
-    parser.add_argument("--dihedral_tolerance", type=float, default=1.0, help="Dihedral detection tolerance multiplier. Default: 1.0")
-    parser.add_argument("--bond_threshold", type=float, default=0.5, help="Minimum internal coordinate change to report. Default: 0.5")
+    parser.add_argument("--dihedral_tolerance", type=float, default=1.1, help="Dihedral detection tolerance multiplier. Default: 1.1")
+    parser.add_argument("--bond_threshold", type=float, default=0.4, help="Minimum internal coordinate change to report. Default: 0.4")
     parser.add_argument("--angle_threshold", type=float, default=10.0, help="Minimum angle change in degrees to report. Default: 10")
     parser.add_argument("--dihedral_threshold", type=float, default=20.0, help="Minimum dihedral change in degrees to report. Default: 20")
     parser.add_argument("--ts_frame", action='store_true', default=0, help="TS frame for distances and angles in the TS. Default: 0 (first frame)")

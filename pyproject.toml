@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vib_analysis"
-version = "1.0.3"
+version = "1.0.4"
 description = "A package for analyzing internal coordinate changes from vibrational mode trajectories."
 authors = [{name = "Dr Alister Goodfellow"}]
 readme = "README.md"  
@@ -26,5 +26,8 @@ homepage = "https://github.com/aligfellow/vib_analysis"
 [project.scripts]
 vib_analysis = "vib_analysis.cli:main"
 
-[tool.setuptools]
-packages = ["vib_analysis"]  # Explicit package name
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"vib_analysis.data" = ["*.json", "*.yaml"]

@@ -7,6 +7,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from .core import analyze_internal_displacements, read_xyz_trajectory, calculate_bond_length, calculate_angle, calculate_dihedral
 from .convert import parse_cclib_output, get_orca_frequencies, convert_orca, get_orca_pltvib_path, write_displaced_structures, parse_xyz_string_to_frames
+from .graph_compare import analyze_displacement_graphs, print_graph_analysis
 
 def print_analysis_results(results, args):
     atom_map = results.get('atom_index_map')
@@ -83,7 +84,9 @@ def run_vib_analysis(
     print_output=False,
     orca_path=None,
     save_displacement=False,
-    no_save=False,  # <--- new parameter
+    no_save=False,
+    graph_analysis=False,
+    debug_graph=False,
 ):
     # Auto-detect based on extension
     _, ext = os.path.splitext(input_file)
@@ -180,6 +183,20 @@ def run_vib_analysis(
         ts_frame=ts_frame,
     )
 
+    # Graph analysis if requested (with cross-validation)
+    if graph_analysis:
+        graph_results = analyze_displacement_graphs(
+            frames, 
+            results['frame_indices'], 
+            bond_tolerance=bond_tolerance,
+            debug=debug_graph,
+            internal_changes=results  # <--- Pass internal coords for cross-validation
+        )
+        results['graph_analysis'] = graph_results
+        
+        if print_output:
+            print_graph_analysis(graph_results, results.get('atom_index_map'))
+
     # Save displaced structures if requested
     if save_displacement:
         base = os.path.splitext(input_file)[0]
@@ -202,6 +219,8 @@ def main():
     parser.add_argument("--orca_path", type=str, help="Path to ORCA binary (optional)")
     parser.add_argument("--save-displacement", "-sd", action="store_true", help="Save slightly displaced structures (e.g. for tight optimisations from TS)")
     parser.add_argument("--no-save", action="store_true", help="Do not save trajectory file to disk (keep in memory only)")
+    parser.add_argument("--graph", "-g", action="store_true", help="Perform graph analysis of structural transformations")
+    parser.add_argument("--debug-graph", "-dg", action="store_true", help="Print detailed graph validation and debugging info")
 
     # Analysis parameters
     parser.add_argument("--bond_tolerance", type=float, default=1.4, help="Bond detection tolerance multiplier. Default: 1.4")
@@ -229,7 +248,9 @@ def main():
         print_output=True,
         orca_path=args.orca_path,
         save_displacement=args.save_displacement,
-        no_save=args.no_save,  # <--- new
+        no_save=args.no_save,
+        graph_analysis=args.graph,
+        debug_graph=args.debug_graph,  # <--- new
     )
 
 if __name__ == "__main__":

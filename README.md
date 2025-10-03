@@ -46,7 +46,7 @@ usage: vib_analysis [-h] [--mode MODE] [--orca_path ORCA_PATH] [--save-displacem
                     [--no-save] [--bond_tolerance BOND_TOLERANCE] [--angle_tolerance ANGLE_TOLERANCE]
                     [--dihedral_tolerance DIHEDRAL_TOLERANCE] [--bond_threshold BOND_THRESHOLD]
                     [--angle_threshold ANGLE_THRESHOLD] [--dihedral_threshold DIHEDRAL_THRESHOLD]
-                    [--ts_frame TS_FRAME] [--all]
+                    [--ts_frame TS_FRAME] [--all] [--graph]
                     input
 
 positional arguments:
@@ -74,6 +74,7 @@ options:
                         Minimum dihedral change to report (degrees). Default: 20
   --ts_frame TS_FRAME   Reference frame index. Default: 0
   --all                 Report all internal coordinate changes
+  --graph, -g           Perform graph analysis of structural transformations
 ```
 
 ## Atom Symbols in Output
@@ -142,6 +143,51 @@ vib_analysis input.out -sd
 ```
 Works even when trajectory is kept in-memory only (with `--no-save`).
 - this is convenient for running a tight optimisations in a pseudo IRC, "quick" reaction coordinate
+
+## Graph Analysis
+
+Analyze structural transformations by comparing molecular graphs:
+
+```bash
+vib_analysis input.out --graph
+# or
+vib_analysis input.out -g
+```
+
+This feature identifies:
+- **Bond formation/cleavage**: New bonds formed or broken
+- **Bond order changes**: Single ↔ double ↔ triple transitions
+- **Cyclization/ring-opening**: Ring formation or breaking
+- **Pericyclic reactions**: Concerted bond reorganization
+- **Rearrangements**: Structural changes without fragmentation
+- **Fragmentations**: Molecule breaking into pieces
+
+Example output:
+```
+================================================================================
+                         GRAPH ANALYSIS SUMMARY
+================================================================================
+
+Reference Structure:
+  Atoms: 42
+  Bonds: 44
+  Rings: 3
+  Fragments: 1
+
+────────────────────────────────────────────────────────────────────────────────
+Frame 5 vs Reference:
+  Transformation Type: bond_formation + cyclization
+
+  Bonds Formed (2):
+    (10, 14) [C-C]
+    (11, 12) [O-C]
+
+  Bond Order Changes (1):
+    (13, 14) [C-C]: 1.0 → 2.0
+
+  Rings Formed: 1
+    Size 5: (10, 11, 12, 13, 14)
+```
 
 ## Minimal Examples 
 ### Example 1

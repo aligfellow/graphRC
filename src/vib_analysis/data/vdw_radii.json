@@ -1,0 +1,477 @@
+{
+    "_metadata": {
+        "ref": "Jorge Charry and Alexandre Tkatchenko, J. Chem. Theory Comput. 2024, 20, 17, 7469–7478.",
+        "doi": "10.1021/acs.jctc.4c00784",
+        "title": "van der Waals Radii of Free and Bonded Atoms from Hydrogen (Z = 1) to Oganesson (Z = 118)",
+        "units": "bohr",
+        "notes": ""
+    },
+    "H": {
+        "Z": 1,
+        "vdw_radius": 3.164697
+    },
+    "He": {
+        "Z": 2,
+        "vdw_radius": 2.672999
+    },
+    "Li": {
+        "Z": 3,
+        "vdw_radius": 5.289595
+    },
+    "Be": {
+        "Z": 4,
+        "vdw_radius": 4.2875
+    },
+    "B": {
+        "Z": 5,
+        "vdw_radius": 3.9302
+    },
+    "C": {
+        "Z": 6,
+        "vdw_radius": 3.6096
+    },
+    "N": {
+        "Z": 7,
+        "vdw_radius": 3.398
+    },
+    "O": {
+        "Z": 8,
+        "vdw_radius": 3.24
+    },
+    "F": {
+        "Z": 9,
+        "vdw_radius": 3.0822
+    },
+    "Ne": {
+        "Z": 10,
+        "vdw_radius": 2.935712
+    },
+    "Na": {
+        "Z": 11,
+        "vdw_radius": 5.285
+    },
+    "Mg": {
+        "Z": 12,
+        "vdw_radius": 4.6952
+    },
+    "Al": {
+        "Z": 13,
+        "vdw_radius": 4.5574
+    },
+    "Si": {
+        "Z": 14,
+        "vdw_radius": 4.281
+    },
+    "P": {
+        "Z": 15,
+        "vdw_radius": 4.043
+    },
+    "S": {
+        "Z": 16,
+        "vdw_radius": 3.8993
+    },
+    "Cl": {
+        "Z": 17,
+        "vdw_radius": 3.7441
+    },
+    "Ar": {
+        "Z": 18,
+        "vdw_radius": 3.600377
+    },
+    "K": {
+        "Z": 19,
+        "vdw_radius": 5.7384
+    },
+    "Ca": {
+        "Z": 20,
+        "vdw_radius": 5.276
+    },
+    "Sc": {
+        "Z": 21,
+        "vdw_radius": 4.907
+    },
+    "Ti": {
+        "Z": 22,
+        "vdw_radius": 4.929
+    },
+    "V": {
+        "Z": 23,
+        "vdw_radius": 4.832
+    },
+    "Cr": {
+        "Z": 24,
+        "vdw_radius": 4.799
+    },
+    "Mn": {
+        "Z": 25,
+        "vdw_radius": 4.664
+    },
+    "Fe": {
+        "Z": 26,
+        "vdw_radius": 4.603
+    },
+    "Co": {
+        "Z": 27,
+        "vdw_radius": 4.525
+    },
+    "Ni": {
+        "Z": 28,
+        "vdw_radius": 4.451
+    },
+    "Cu": {
+        "Z": 29,
+        "vdw_radius": 4.425
+    },
+    "Zn": {
+        "Z": 30,
+        "vdw_radius": 4.3036
+    },
+    "Ga": {
+        "Z": 31,
+        "vdw_radius": 4.464
+    },
+    "Ge": {
+        "Z": 32,
+        "vdw_radius": 4.324
+    },
+    "As": {
+        "Z": 33,
+        "vdw_radius": 4.15
+    },
+    "Se": {
+        "Z": 34,
+        "vdw_radius": 4.13
+    },
+    "Br": {
+        "Z": 35,
+        "vdw_radius": 3.944
+    },
+    "Kr": {
+        "Z": 36,
+        "vdw_radius": 3.819973
+    },
+    "Rb": {
+        "Z": 37,
+        "vdw_radius": 5.8196
+    },
+    "Sr": {
+        "Z": 38,
+        "vdw_radius": 5.43
+    },
+    "Y": {
+        "Z": 39,
+        "vdw_radius": 5.28
+    },
+    "Zr": {
+        "Z": 40,
+        "vdw_radius": 5.009
+    },
+    "Nb": {
+        "Z": 41,
+        "vdw_radius": 4.914
+    },
+    "Mo": {
+        "Z": 42,
+        "vdw_radius": 4.832
+    },
+    "Tc": {
+        "Z": 43,
+        "vdw_radius": 4.765
+    },
+    "Ru": {
+        "Z": 44,
+        "vdw_radius": 4.703
+    },
+    "Rh": {
+        "Z": 45,
+        "vdw_radius": 4.64
+    },
+    "Pd": {
+        "Z": 46,
+        "vdw_radius": 4.0681
+    },
+    "Ag": {
+        "Z": 47,
+        "vdw_radius": 4.525
+    },
+    "Cd": {
+        "Z": 48,
+        "vdw_radius": 4.411
+    },
+    "In": {
+        "Z": 49,
+        "vdw_radius": 4.635
+    },
+    "Sn": {
+        "Z": 50,
+        "vdw_radius": 4.501
+    },
+    "Sb": {
+        "Z": 51,
+        "vdw_radius": 4.369
+    },
+    "Te": {
+        "Z": 52,
+        "vdw_radius": 4.292
+    },
+    "I": {
+        "Z": 53,
+        "vdw_radius": 4.2049
+    },
+    "Xe": {
+        "Z": 54,
+        "vdw_radius": 4.0943
+    },
+    "Cs": {
+        "Z": 55,
+        "vdw_radius": 6.0103
+    },
+    "Ba": {
+        "Z": 56,
+        "vdw_radius": 5.686
+    },
+    "La": {
+        "Z": 57,
+        "vdw_radius": 5.498
+    },
+    "Ce": {
+        "Z": 58,
+        "vdw_radius": 5.461
+    },
+    "Pr": {
+        "Z": 59,
+        "vdw_radius": 5.502
+    },
+    "Nd": {
+        "Z": 60,
+        "vdw_radius": 5.472
+    },
+    "Pm": {
+        "Z": 61,
+        "vdw_radius": 5.442
+    },
+    "Sm": {
+        "Z": 62,
+        "vdw_radius": 5.41
+    },
+    "Eu": {
+        "Z": 63,
+        "vdw_radius": 5.377
+    },
+    "Gf": {
+        "Z": 64,
+        "vdw_radius": 5.262
+    },
+    "Tb": {
+        "Z": 65,
+        "vdw_radius": 5.317
+    },
+    "Dy": {
+        "Z": 66,
+        "vdw_radius": 5.294
+    },
+    "ho": {
+        "Z": 67,
+        "vdw_radius": 5.252
+    },
+    "Er": {
+        "Z": 68,
+        "vdw_radius": 5.223
+    },
+    "Tm": {
+        "Z": 69,
+        "vdw_radius": 5.192
+    },
+    "Yb": {
+        "Z": 70,
+        "vdw_radius": 5.166
+    },
+    "Lu": {
+        "Z": 71,
+        "vdw_radius": 5.155
+    },
+    "Hf": {
+        "Z": 72,
+        "vdw_radius": 4.95
+    },
+    "Ta": {
+        "Z": 73,
+        "vdw_radius": 4.72
+    },
+    "W": {
+        "Z": 74,
+        "vdw_radius": 4.66
+    },
+    "Re": {
+        "Z": 75,
+        "vdw_radius": 4.603
+    },
+    "Os": {
+        "Z": 76,
+        "vdw_radius": 4.548
+    },
+    "Ir": {
+        "Z": 77,
+        "vdw_radius": 4.513
+    },
+    "Pt": {
+        "Z": 78,
+        "vdw_radius": 4.438
+    },
+    "Au": {
+        "Z": 79,
+        "vdw_radius": 4.259
+    },
+    "Hg": {
+        "Z": 80,
+        "vdw_radius": 4.223
+    },
+    "Tl": {
+        "Z": 81,
+        "vdw_radius": 4.464
+    },
+    "Pb": {
+        "Z": 82,
+        "vdw_radius": 4.425
+    },
+    "Bi": {
+        "Z": 83,
+        "vdw_radius": 4.438
+    },
+    "Po": {
+        "Z": 84,
+        "vdw_radius": 4.383
+    },
+    "At": {
+        "Z": 85,
+        "vdw_radius": 4.354
+    },
+    "Rn": {
+        "Z": 86,
+        "vdw_radius": 4.242
+    },
+    "Fr": {
+        "Z": 87,
+        "vdw_radius": 5.8144
+    },
+    "Ra": {
+        "Z": 88,
+        "vdw_radius": 5.605
+    },
+    "Ac": {
+        "Z": 89,
+        "vdw_radius": 5.453
+    },
+    "Th": {
+        "Z": 90,
+        "vdw_radius": 5.51
+    },
+    "Pa": {
+        "Z": 91,
+        "vdw_radius": 5.242
+    },
+    "U": {
+        "Z": 92,
+        "vdw_radius": 5.111
+    },
+    "Np": {
+        "Z": 93,
+        "vdw_radius": 5.228
+    },
+    "Pu": {
+        "Z": 94,
+        "vdw_radius": 5.13
+    },
+    "Am": {
+        "Z": 95,
+        "vdw_radius": 5.12
+    },
+    "Cm": {
+        "Z": 96,
+        "vdw_radius": 5.19
+    },
+    "Bk": {
+        "Z": 97,
+        "vdw_radius": 5.09
+    },
+    "Cf": {
+        "Z": 98,
+        "vdw_radius": 5.07
+    },
+    "Es": {
+        "Z": 99,
+        "vdw_radius": 5.05
+    },
+    "Fm": {
+        "Z": 100,
+        "vdw_radius": 5.02
+    },
+    "Md": {
+        "Z": 101,
+        "vdw_radius": 4.99
+    },
+    "No": {
+        "Z": 102,
+        "vdw_radius": 4.996
+    },
+    "Lr": {
+        "Z": 103,
+        "vdw_radius": 5.82
+    },
+    "Rf": {
+        "Z": 104,
+        "vdw_radius": 5.009
+    },
+    "Db": {
+        "Z": 105,
+        "vdw_radius": 4.354
+    },
+    "Sg": {
+        "Z": 106,
+        "vdw_radius": 4.324
+    },
+    "Bh": {
+        "Z": 107,
+        "vdw_radius": 4.292
+    },
+    "Hs": {
+        "Z": 108,
+        "vdw_radius": 4.259
+    },
+    "Mt": {
+        "Z": 109,
+        "vdw_radius": 4.225
+    },
+    "Ds": {
+        "Z": 110,
+        "vdw_radius": 4.188
+    },
+    "Rg": {
+        "Z": 111,
+        "vdw_radius": 4.19
+    },
+    "Cn": {
+        "Z": 112,
+        "vdw_radius": 4.109
+    },
+    "Nh": {
+        "Z": 113,
+        "vdw_radius": 4.13
+    },
+    "Fl": {
+        "Z": 114,
+        "vdw_radius": 4.169
+    },
+    "Mc": {
+        "Z": 115,
+        "vdw_radius": 4.69
+    },
+    "Ts": {
+        "Z": 117,
+        "vdw_radius": 4.74
+    },
+    "Og": {
+        "Z": 118,
+        "vdw_radius": 4.56
+    }
+}

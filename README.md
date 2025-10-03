@@ -26,6 +26,10 @@ comment line
 ... ... ... ... 
 ```
 
+- **Auto-detection**: If input is `.xyz`, trajectory is read directly. Otherwise, attempts parsing with cclib first, then falls back to orca_pltvib.
+- **Mode default**: `--mode` defaults to 0 (imaginary mode).
+- Trajectory files are saved to disk when possible; if write fails, analysis proceeds in-memory only.
+
 - orca and gaussian can be parsed (using cclib) **0 indexed modes**
 - orca can also be parsed separately with wrapper around orca_pltvib `--parse_orca --mode X`
   - the wrapper deals with orca printing 0 modes for linear and non-linear molecules, `--mode 0` is always the first mode
@@ -42,39 +46,40 @@ comment line
 ## Command line interface
 ```bash
 > vib_analysis -h
-usage: vib_analysis [-h] [--parse_cclib] [--parse_orca] [--mode MODE] [--orca_path ORCA_PATH]
-                    [--bond_tolerance BOND_TOLERANCE] [--angle_tolerance ANGLE_TOLERANCE]
+usage: vib_analysis [-h] [--mode MODE] [--orca_path ORCA_PATH] [--save-displacement]
+                    [--no-save] [--bond_tolerance BOND_TOLERANCE] [--angle_tolerance ANGLE_TOLERANCE]
                     [--dihedral_tolerance DIHEDRAL_TOLERANCE] [--bond_threshold BOND_THRESHOLD]
-                    [--angle_threshold ANGLE_THRESHOLD] [--dihedral_threshold DIHEDRAL_THRESHOLD] [--ts_frame] [--all]
+                    [--angle_threshold ANGLE_THRESHOLD] [--dihedral_threshold DIHEDRAL_THRESHOLD]
+                    [--ts_frame TS_FRAME] [--all]
                     input
-
-Vibrational Mode Analysis Tool
 
 positional arguments:
   input                 Input file (XYZ trajectory, ORCA output, or Gaussian log)
 
 options:
   -h, --help            show this help message and exit
-  --parse_cclib         Process Gaussian/ORCA/other output file instead of XYZ trajectory: requires --mode (zero indexed)
-  --parse_orca          Parse ORCA output file instead of XYZ trajectory: requires --mode (zero indexed)
-  --mode MODE           Mode index to analyze (for Gaussian/ORCA conversion)
+  --mode MODE           Mode index to analyze (default: 0, zero-indexed)
   --orca_path ORCA_PATH
-                        Path to ORCA binary
+                        Path to ORCA binary (optional)
+  --save-displacement, -sd
+                        Save displaced structures (frames 1 and -1 from trajectory)
+  --no-save             Do not save trajectory file to disk (keep in memory only)
   --bond_tolerance BOND_TOLERANCE
-                        Bond detection tolerance multiplier. Default: 1.5
+                        Bond detection tolerance multiplier. Default: 1.4
   --angle_tolerance ANGLE_TOLERANCE
                         Angle detection tolerance multiplier. Default: 1.1
   --dihedral_tolerance DIHEDRAL_TOLERANCE
                         Dihedral detection tolerance multiplier. Default: 1.0
   --bond_threshold BOND_THRESHOLD
-                        Minimum internal coordinate change to report. Default: 0.5
+                        Minimum bond change to report (Å). Default: 0.4
   --angle_threshold ANGLE_THRESHOLD
-                        Minimum angle change in degrees to report. Default: 10
+                        Minimum angle change to report (degrees). Default: 10
   --dihedral_threshold DIHEDRAL_THRESHOLD
-                        Minimum dihedral change in degrees to report. Default: 20
-  --ts_frame            TS frame for distances and angles in the TS. Default: 0 (first frame)
-  --all                 Report all changes in angles and dihedrals.
-```                 
+                        Minimum dihedral change to report (degrees). Default: 20
+  --ts_frame TS_FRAME   Reference frame index. Default: 0
+  --all                 Report all internal coordinate changes
+```
+
 ## Atom Symbols in Output
 Each reported internal coordinate includes element symbols:
 ```
@@ -95,23 +100,21 @@ For example:
 from vib_analysis import run_vib_analysis
 
 orca_out = 'data/bimp.v000.xyz'
-# ORCA_PATH = '/path/to/orca"
 
 results = run_vib_analysis(
         input_file=orca_out,
-        # print_output=True,
     )
 
 print(results)
 
-theoretical_bond_change = (11,12)
-if theoretical_bond_change in results['bond_changes']:
-    print(f'True: Bond change {theoretical_bond_change} found in results.')
+theoretical_bond_changes = [(11,12), (10,14)]
+if all(bond in results['bond_changes'] for bond in theoretical_bond_changes):
+    print(f'True: All theoretical bond changes {theoretical_bond_changes} found in results.')
 ```
 Outputs:
 ```python
 {'bond_changes': {(11, 12): (2.052, 2.064)}, 'angle_changes': {}, 'minor_angle_changes': {(13, 12, 29): (14.436, 122.116), (29, 12, 30): (12.54, 117.79)}, 'dihedral_changes': {(32, 14, 15, 20): (43.451, 350.826)}, 'minor_dihedral_changes': {(2, 1, 10, 11): (49.302, 194.336), (29, 12, 13, 31): (67.358, 17.521)}, 'frame_indices': [5, 15], 'atom_index_map': {0: 'O', 1: 'C', ... }}
-True: Bond change (11, 12) found in results.
+True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
 ```
   - This can be used to check for a known vibrational mode (theoretical_bond_change) in `results['bond_changes']`
   - So in theory this could identify whether the correct TS mode has been identidied in a high throughput search if the atom indices are known (or available automatically)
@@ -159,7 +162,7 @@ The magnitude and change (Δ) of the modes is somewhat meaningless, though the i
 ```bash
 > vib_analysis dihedral.v000.xyz
 # OR
-> vib_analysis dihedral.out --parse_orca --mode 0
+> vib_analysis dihedral.out # defaults parsing via CCLIB and orca_pltvib (if available) 
 
 Analysed vibrational trajectory from examples/data/dihedral.v000.xyz:
 
@@ -230,17 +233,18 @@ Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
 Mn catalyst hydrogenation
 ![Mn hydrogenation](images/mn.gif)
 ```bash
-> vib_analysis mn.log --parse_cclib --mode 0 --all
+> vib_analysis mn.log --all
+Parsing mn.log with cclib...
 Written trajectory to: mn.v000.xyz
 
 First 5 non-zero vibrational frequencies:
-  Mode 0: -748.5 cm**-1  (imaginary)
-  Mode 1: 20.3 cm**-1
-  Mode 2: 25.1 cm**-1
-  Mode 3: 32.5 cm**-1
-  Mode 4: 36.7 cm**-1
+  Mode 0: -748.48 cm**-1  (imaginary)
+  Mode 1: 20.26 cm**-1 
+  Mode 2: 25.12 cm**-1 
+  Mode 3: 32.45 cm**-1 
+  Mode 4: 36.68 cm**-1 
 
-Analysed vibrational trajectory from examples/data/mn.v000.xyz:
+Analysed vibrational trajectory (Mode 0 with frequency -748.48 cm**-1):
 
 =========================== Significant Bond Changes ===========================
 Bond (5, 65)   [N-H]   Δ =   1.776 Å,  Initial =   1.319 Å
@@ -256,11 +260,6 @@ Angle (61, 1, 63)  [C-Mn-H]  Δ =  15.528 °,  Initial =  81.202 °
 Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
 
 Note: These angles are dependent on other changes and may not be significant on their own.
-
-============================ Minor Dihedral Changes ============================
-Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial = 283.248 °
-
-Note: These dihedrals are dependent on other changes and may not be significant on their own.
 ```
 - this correctly identifies bonding changes of this transition state
 - parsing the output prints the imaginary modes from the output file
@@ -270,37 +269,70 @@ Note: These dihedrals are dependent on other changes and may not be significant 
 Orca output parsing is also possible with `--parse_cclib` and separately with `--parse_orca` 
   - it appears that cclib cannot yet deal with orca_6.1.0 
 ```bash
-> vib_analysis dihedral.out --parse_orca --mode 0
+> vib_analysis dihedral.out
+
+Parsing dihedral.out with orca_pltvib...
+INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one. # orca_pltvib by default runs on the FIRST occurance of a frequency section
+Written trajectory to: vib_analysis/examples/data/dihedral.v000.xyz
 
 First 5 non-zero vibrational frequencies:
-  Mode 0: -388.5 cm**-1  (imaginary)
-  Mode 1: 276.9 cm**-1
-  Mode 2: 634.5 cm**-1
-  Mode 3: 738.1 cm**-1
-  Mode 4: 940.0 cm**-1
+  Mode 0: -225.09 cm**-1  (imaginary)
+  Mode 1: 270.89 cm**-1 
+  Mode 2: 612.80 cm**-1 
+  Mode 3: 846.45 cm**-1 
+  Mode 4: 899.93 cm**-1 
 
-Analysed vibrational trajectory from examples/data/dihedral.v000.xyz:
+Analysed vibrational trajectory (Mode 0 with frequency -225.09 cm**-1):
 
 ========================= Significant Dihedral Changes =========================
-Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  39.557 °,  Initial = 359.998 °
+Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial = 359.998 °
 ```
 
 And again, with the bimp example:
 ```bash
-vib_analysis bimp.out --parse_orca --mode 0
+vib_analysis bimp.out
+
+Parsing dihedral.out with orca_pltvib...
+INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one.
+Written trajectory to: vib_analysis/examples/data/dihedral.v000.xyz
 
 First 5 non-zero vibrational frequencies:
-  Mode 0: -333.9 cm**-1  (imaginary)
-  Mode 1: 8.6 cm**-1
-  Mode 2: 12.7 cm**-1
-  Mode 3: 13.3 cm**-1
-  Mode 4: 15.8 cm**-1
+  Mode 0: -225.09 cm**-1  (imaginary)
+  Mode 1: 270.89 cm**-1 
+  Mode 2: 612.80 cm**-1 
+  Mode 3: 846.45 cm**-1 
+  Mode 4: 899.93 cm**-1 
 
-Analysed vibrational trajectory from examples/data/bimp.v000.xyz:
+Analysed vibrational trajectory (Mode 0 with frequency -225.09 cm**-1):
 
-=========================== Significant Bond Changes ===========================
-Bond (11, 12)  [O-C]  Δ =   2.052 Å,  Initial =   2.064 Å
-Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
+========================= Significant Dihedral Changes =========================
+Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial = 359.998 °
 ```
-- this *also works* using the command `vib_analysis bimp.out --parse_cclib --mode 0 --all`
-  - this output used `orca_6.0.1`
+- this output used `orca_6.0.1` and the `CCLIB` parsing is supported 
+- newer versions, *i.e.* `orca_6.1.0`, will fall back to `orca_pltvib` if available
+
+## New Features
+
+### Auto-Detection of Input Type
+```bash
+vib_analysis input.xyz          # Direct trajectory read
+vib_analysis input.log          # Tries cclib, falls back to orca_pltvib
+vib_analysis input.out --mode 1 # Analyzes mode 1
+```
+
+### In-Memory Analysis
+Prevent trajectory file from being written to disk:
+```bash
+vib_analysis input.out --no-save
+```
+Useful when lacking write permissions or avoiding disk I/O overhead.
+
+### Save Displaced Structures
+Export frames at small displacements (2nd and last frame):
+```bash
+vib_analysis input.out --save-displacement
+# or
+vib_analysis input.out -sd
+# Creates: input_F.xyz, input_R.xyz (Forward/Reverse along mode)
+```
+Works even when trajectory is kept in-memory only (with `--no-save`).

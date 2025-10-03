@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-# convert.py
 import os
-import sys
 import subprocess
-import argparse
 import numpy as np
 from ase import Atoms
-from ase.io import read
+from ase.io import write as ase_write
 import cclib
+import tempfile
 
 def get_orca_pltvib_path():
     """Find orca_pltvib executable in the same directory as orca"""
@@ -48,60 +46,81 @@ def get_orca_frequencies(orca_file):
     freqs = [f for f in freqs if abs(f) > 1e-5]
     return freqs
 
-def convert_orca(orca_file, mode, pltvib_path=None):
-    """Convert ORCA output to vibration trajectory files"""
+def write_displaced_structures(frames, prefix, indices: list = [1,-1], output_dir="."):
+    """
+    Write frames at given indices as separate XYZ files.
+    indices: list of frame indices (e.g., [1, -1] for 2nd and last)
+    Names files as <prefix>_F.xyz and <prefix>_R.xyz (Forward/Reverse).
+    """
+    labels = ["F", "R"]  # Forward and Reverse
+    for label, idx in zip(labels, indices):
+        frame = frames[idx]
+        filename = os.path.join(output_dir, f"{prefix}_{label}.xyz")
+        ase_write(filename, frame)
+        print(f"Written displaced structure to: {filename}")
+
+def write_trajectory(trj_data, base_name, no_save=False, silent=False):
+    """
+    Attempt to write trajectory to file unless no_save=True.
+    Returns: (filepath_or_None, in_memory_data_string)
+    silent: if True, suppress success/failure messages
+    """
+    if no_save:
+        if not silent:
+            print("Trajectory kept in memory only (--no-save flag active).")
+        return None, trj_data
+    
+    try:
+        with open(base_name, 'w') as f:
+            f.write(trj_data)
+        if not silent:
+            print(f"Written trajectory to: {base_name}")
+        return base_name, trj_data
+    except IOError as e:
+        if not silent:
+            print(f"Warning: Could not write to {base_name} ({e}). Keeping trajectory in memory only.")
+        return None, trj_data
+
+def convert_orca(orca_file, mode, pltvib_path=None, no_save=False, silent=False):
+    """Convert ORCA output to vibration trajectory; return (file_or_None, trj_string)"""
     if pltvib_path is None:
-        raise ValueError("Path to orca_pltvib executable is required.")
+        pltvib_path = get_orca_pltvib_path()
     if not os.path.exists(orca_file):
         raise FileNotFoundError(f"ORCA output file {orca_file} does not exist.")
-    basename = os.path.splitext(orca_file)[0]
     
-    error_indices = []
-    freq_indices = []
-    coord_indices = []
-    n_atoms = None
-    # check for multiple FREQUENCY blocks.
+    basename = os.path.splitext(orca_file)[0]
+    # ...existing orca_mode logic...
+    # Determine orca_mode offset (5 or 6)
     with open(orca_file, 'r') as f:
         lines = f.readlines()
-    for idx, line in enumerate(lines):
-        if "ERROR" in line:
-            error_indices.append(idx)
-        if "VIBRATIONAL FREQUENCIES" in line:
-            freq_indices.append(idx)
-        if "CARTESIAN COORDINATES (ANGSTROEM)" in line:
-            coord_indices.append(idx)
+    n_atoms = None
+    for line in lines:
         if "Number of atoms" in line:
             n_atoms = int(line.split()[-1])
-
-    # orca pltvib requires a single frequency mode to be specified - linear has 5 zero modes, non-linear has 6.
+            break
     if n_atoms is None:
         raise ValueError("Could not determine number of atoms from ORCA output.")
-    if n_atoms < 3: 
-        orca_mode = int(mode) + 5
-    else:
-        orca_mode = int(mode) + 6
+    orca_mode = int(mode) + (5 if n_atoms < 3 else 6)
 
-    if error_indices:
-        print(f"WARNING: ORCA output contains an error at line {error_indices}. Please check the output file.")
+    # ...existing frequency block detection and tmp file handling...
+    freq_indices = [i for i, line in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in line]
     if not freq_indices:
         raise ValueError("No vibrational frequencies section found in ORCA output.")
+    
+    coord_indices = [i for i, line in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in line]
     if len(freq_indices) > 1:
-        print(f"INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found in {orca_file}. Using the last one.")
+        print(f"INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one.")
         idx = max(i for i in coord_indices if i < freq_indices[-1])
-        if idx != coord_indices[-1]:
-            print(f"WARNING: There are additional coordinates after the last frequency block. Likely an error occurred.")
         tmp_file = f'{basename}.tmp'
         with open(tmp_file, 'w') as f:
             f.writelines(lines[idx:])
-        subprocess.run([pltvib_path, tmp_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)       
+        subprocess.run([pltvib_path, tmp_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         os.remove(tmp_file)
         os.system(f'mv {basename}.tmp.v{orca_mode:03d}.xyz {basename}.out.v{orca_mode:03d}.xyz')
     else:
-        # Generate vibration files using orca_pltvib
         subprocess.run([pltvib_path, orca_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     os.system(f'mv {basename}.out.v{orca_mode:03d}.xyz {basename}.out.v{mode:03d}.xyz')
-    # Process each mode file
     orca_vib = f'{basename}.out.v{mode:03d}.xyz'
     xyz_vib = f'{basename}.v{mode:03d}.xyz'
 
@@ -111,64 +130,88 @@ def convert_orca(orca_file, mode, pltvib_path=None):
     with open(orca_vib, 'r') as f:
         lines = f.readlines()
     
-    # Process frames
     xyz_len = int(lines[0].split()[0]) + 2
     xyzs = [lines[i:i+xyz_len] for i in range(0, len(lines), xyz_len)]
     
-    # Clean and write new file
-    with open(xyz_vib, 'w') as f:
-        for idx in xyzs:
-            # Keep header lines (atom count and comment)
-            f.write(idx[0])
-            f.write(f"Mode {mode} Frame: {idx[1]}")
-
-            # Process atom lines (keep only symbol and coordinates)
-            for line in idx[2:]:
-                parts = line.split()
-                f.write(f"{parts[0]} {parts[1]} {parts[2]} {parts[3]}\n")
+    trj_data = ""
+    for idx_block in xyzs:
+        trj_data += idx_block[0]
+        trj_data += f"Mode {mode} Frame: {idx_block[1]}"
+        for line in idx_block[2:]:
+            parts = line.split()
+            trj_data += f"{parts[0]} {parts[1]} {parts[2]} {parts[3]}\n"
     
-    print(f"Written trajectory to: {xyz_vib}")
+    file_path, trj_str = write_trajectory(trj_data, xyz_vib, no_save=no_save, silent=silent)
     os.remove(orca_vib)
-    return xyz_vib
+    return file_path, trj_str
 
-def parse_cclib_output(output_file, mode, amplitudes=None):
-    """Convert Gaussian/ORCA/other output to vibration trajectory files for a single mode with cclib"""
+def parse_cclib_output(output_file, mode, no_save=False, silent=False):
+    """Parse with cclib; return (freqs, file_or_None, trj_string)"""
     mode = int(mode)
-    if amplitudes is None:
-        amplitudes = [0.0, -0.2, -0.4, -0.6, -0.8, -1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
-        # amplitudes = [0.0, -0.1, -0.2, -0.3, -0.4, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.4, 0.3, 0.2, 0.1]
+    amplitudes = [0.0, -0.2, -0.4, -0.6, -0.8, -1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
 
-    # Parse file with cclib
-    parser = cclib.io.ccopen(output_file)
+    try:
+        parser = cclib.io.ccopen(output_file)
+        if parser is None:
+            raise ValueError(f"cclib could not parse {output_file}.")
+    except Exception as e:
+        raise ValueError(f"Error parsing {output_file} with cclib: {e}")
     data = parser.parse()
 
-    freqs = data.vibfreqs
-    if len(freqs) == 0:
+    if not hasattr(data, 'vibfreqs') or len(data.vibfreqs) == 0:
         raise ValueError("No vibrational frequencies found in file.")
 
-    # Validate mode index
-    num_modes = len(data.vibfreqs)
+    freqs = data.vibfreqs
+    num_modes = len(freqs)
     if mode < 0 or mode >= num_modes:
         raise ValueError(f"Mode index {mode} out of range. File has {num_modes} modes.")
-    # === Prepare geometry and displacement ===
+
     atom_numbers = data.atomnos
     atom_symbols = [Atoms(numbers=[z]).get_chemical_symbols()[0] for z in atom_numbers]
     eq_coords = data.atomcoords[-1]
     displacement = np.array(data.vibdisps[mode])
     freq = freqs[mode]
 
-    # Output file
     base = os.path.splitext(output_file)[0]
     out_xyz = f"{base}.v{mode:03d}.xyz"
 
-    with open(out_xyz, 'w') as f:
-        for amp in amplitudes:
-            displaced = eq_coords + amp * displacement
-            f.write(f"{len(atom_numbers)}\n")
-            f.write(f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n")
-            for sym, coord in zip(atom_symbols, displaced):
-                f.write(f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n")
+    trj_data = ""
+    for amp in amplitudes:
+        displaced = eq_coords + amp * displacement
+        trj_data += f"{len(atom_numbers)}\n"
+        trj_data += f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n"
+        for sym, coord in zip(atom_symbols, displaced):
+            trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
 
-    print(f"Written trajectory to: {out_xyz}")
-    return freqs, out_xyz
-    
+    file_path, trj_str = write_trajectory(trj_data, out_xyz, no_save=no_save, silent=silent)
+    return freqs, file_path, trj_str
+
+def parse_xyz_string_to_frames(trj_data_str):
+    """
+    Parse XYZ trajectory string into list of ASE Atoms objects.
+    Returns list of frames.
+    """
+    lines = trj_data_str.strip().split('\n')
+    frames = []
+    i = 0
+    while i < len(lines):
+        try:
+            num_atoms = int(lines[i].strip())
+        except (ValueError, IndexError):
+            break
+        if i + 1 >= len(lines):
+            break
+        comment = lines[i + 1]
+        coords = []
+        symbols = []
+        for j in range(num_atoms):
+            if i + 2 + j >= len(lines):
+                break
+            parts = lines[i + 2 + j].split()
+            symbols.append(parts[0])
+            coords.append([float(x) for x in parts[1:4]])
+        frame = Atoms(symbols=symbols, positions=coords)
+        frames.append(frame)
+        i += 2 + num_atoms
+    return frames
+

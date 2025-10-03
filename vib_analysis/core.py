@@ -229,7 +229,7 @@ def select_most_diverse_frames(frames, top_n=2):
     return selected_indices
 
 def analyze_internal_displacements(
-    xyz_file,
+    xyz_file_or_frames,  # <--- can be file path (str) or list of Atoms
     bond_tolerance=1.4,
     angle_tolerance=1.1,
     dihedral_tolerance=1.0,
@@ -238,13 +238,19 @@ def analyze_internal_displacements(
     dihedral_threshold=20.0,
     ts_frame=0,  # Default to first frame
 ):
-    frames = read_xyz_trajectory(xyz_file)
+    # Handle both file path and in-memory frames
+    if isinstance(xyz_file_or_frames, str):
+        frames = read_xyz_trajectory(xyz_file_or_frames)
+    elif isinstance(xyz_file_or_frames, list):
+        frames = xyz_file_or_frames
+    else:
+        raise TypeError("xyz_file_or_frames must be a file path (str) or list of ASE Atoms objects.")
+
     internal_coords = build_internal_coordinates(
         frame=frames[ts_frame],
         bond_tolerance=bond_tolerance,
         angle_tolerance=angle_tolerance,
         dihedral_tolerance=dihedral_tolerance,
-
     )
     selected_indices = select_most_diverse_frames(frames)
     selected_frames = [frames[i] for i in selected_indices]

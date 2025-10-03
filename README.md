@@ -28,13 +28,9 @@ comment line
 
 - **Auto-detection**: If input is `.xyz`, trajectory is read directly. Otherwise, attempts parsing with cclib first, then falls back to orca_pltvib.
 - **Mode default**: `--mode` defaults to 0 (imaginary mode).
-- Trajectory files are saved to disk when possible; if write fails, analysis proceeds in-memory only.
+- Trajectory files are saved to disk when possible; if write fails, analysis proceeds without saving.
 
-- orca and gaussian can be parsed (using cclib) **0 indexed modes**
-- orca can also be parsed separately with wrapper around orca_pltvib `--parse_orca --mode X`
-  - the wrapper deals with orca printing 0 modes for linear and non-linear molecules, `--mode 0` is always the first mode
-  - this separate `--parse_orca` avoids problems with cclib parsing newer orca outputs
-- for `--parse_orca`, the path can be provided with `--orca_path`, if not provided, this will default to checking for ORCA installation with `os.system("which orca")`
+`--orca_path` can be provided, if absent this will default to checking for ORCA in PATH with `os.system("which orca")`
 
 >[!IMPORTANT]
 >- **atom indices are zero indexed** (though the viewer used below is *one indexed*)
@@ -135,6 +131,17 @@ True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
   - *i.e.* where a bond is changed, the angles around it will be altered across a vibrational trajectory and those angles would be significant enough to report as a change
   - where one of these atoms is involved in a *significant* bond change, the angle is classed as minor due to the coupled nature of the internal coordinates
      - same applies for dihedrals
+   
+### Save Displaced Structures
+Export frames at small displacements:
+```bash
+vib_analysis input.out --save-displacement
+# or
+vib_analysis input.out -sd
+# Creates: input_F.xyz, input_R.xyz (Forward/Reverse along mode)
+```
+Works even when trajectory is kept in-memory only (with `--no-save`).
+- this is convenient for running a tight optimisations in a pseudo IRC, "quick" reaction coordinate
 
 ## Minimal Examples 
 ### Example 1
@@ -310,29 +317,3 @@ Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial = 359.998 °
 ```
 - this output used `orca_6.0.1` and the `CCLIB` parsing is supported 
 - newer versions, *i.e.* `orca_6.1.0`, will fall back to `orca_pltvib` if available
-
-## New Features
-
-### Auto-Detection of Input Type
-```bash
-vib_analysis input.xyz          # Direct trajectory read
-vib_analysis input.log          # Tries cclib, falls back to orca_pltvib
-vib_analysis input.out --mode 1 # Analyzes mode 1
-```
-
-### In-Memory Analysis
-Prevent trajectory file from being written to disk:
-```bash
-vib_analysis input.out --no-save
-```
-Useful when lacking write permissions or avoiding disk I/O overhead.
-
-### Save Displaced Structures
-Export frames at small displacements (2nd and last frame):
-```bash
-vib_analysis input.out --save-displacement
-# or
-vib_analysis input.out -sd
-# Creates: input_F.xyz, input_R.xyz (Forward/Reverse along mode)
-```
-Works even when trajectory is kept in-memory only (with `--no-save`).

@@ -247,8 +247,8 @@ Dihedral (32, 14, 15, 20)  [H-C-C-C]  Δ =  43.451 °,  Initial = 350.826 °
 Note: These dihedrals are not directly dependent on other changes however they may be artefacts of motion in the TS.
 ```
 >[!WARNING]
-> This still misses the C-C bond change of 10-14 due to the internal coordinate constructions
-> Work in progress
+> This still misses the C-C bond change of 10-14 due to the internal coordinate constructions  
+> *to be adjusted* 
 
 ### Example 5 
 Mn catalyst hydrogenation

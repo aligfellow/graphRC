@@ -31,59 +31,85 @@ def read_xyz_trajectory(file_path):
         raise ValueError(f"Exiting: Only one geometry found, make sure that this is a trj file with at least 2 frames.")
     return frames
 
-def are_bonded(frame, i, j, tolerance=0.4):
-    """Checks if two atoms are bonded based on a distance threshold."""
-    r_cov = covalent_radii[frame.numbers[i]] + covalent_radii[frame.numbers[j]]
-    distance = frame.get_distance(i, j)
-    return distance <= r_cov + tolerance
-
-def build_internal_coordinates(frame, bond_tolerance=1.5, angle_tolerance=1.1, dihedral_tolerance=2):
+def build_internal_coordinates(frame, bond_tolerance=1.5, angle_tolerance=1.1, dihedral_tolerance=1.1):
     """Builds internal coordinates (bonds, angles, dihedrals) for a given ASE Atoms frame."""
     cutoffs = natural_cutoffs(frame, mult=bond_tolerance)
     nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
     nl.update(frame)
 
+    bonds = []
+    # Build bond list
+    for i in range(len(frame)):
+        indices, offsets = nl.get_neighbors(i)
+        for j in indices:
+            if j > i:
+                bond = (int(i), int(j))
+                bonds.append(bond)
+    
+    # Build connectivity graph from all bonds
+    all_connectivity = {}
+    for i, j in bonds:
+        all_connectivity.setdefault(i, set()).add(j)
+        all_connectivity.setdefault(j, set()).add(i)
+
+    angles = []
     # Tighter neighbor list for angles and dihedrals
     angle_cutoffs = natural_cutoffs(frame, mult=angle_tolerance)
     angle_nl = NeighborList(angle_cutoffs, self_interaction=False, bothways=False)
     angle_nl.update(frame)
 
-    dihedral_cutoffs = natural_cutoffs(frame, mult=dihedral_tolerance)
-    dihedral_nl = NeighborList(dihedral_cutoffs, self_interaction=False, bothways=False)
-    dihedral_nl.update(frame)
-
-    bonds = []
-    angles = []
-    dihedrals = []
-
-    # Build bond list
+    angle_bonds = set()
     for i in range(len(frame)):
-        indices, offsets = nl.get_neighbors(i)
+        indices, offsets = angle_nl.get_neighbors(i)
         for j in indices:
-            if j > i and are_bonded(frame, i, j, tolerance=1.0): 
-                bonds.append((int(i), int(j)))
+            if j > i:
+                angle_bonds.add((int(i), int(j)))
 
-    # Build angle list
-    for j in range(len(frame)):
-        neighbors, _ = angle_nl.get_neighbors(j)
+    # Build connectivity for angles from stricter bonds
+    angle_connectivity = {}
+    for i, j in angle_bonds:
+        angle_connectivity.setdefault(i, set()).add(j)
+        angle_connectivity.setdefault(j, set()).add(i)
+
+    # Build angles from angle connectivity
+    angles = []
+    for j in angle_connectivity:
+        neighbors = list(angle_connectivity[j])
         for i, k in combinations(neighbors, 2):
-            if i != k and are_bonded(frame, i, j) and are_bonded(frame, j, k):
-                angles.append((int(i), int(j), int(k)))
+            angles.append((int(i), int(j), int(k)))
 
-    # Build dihedral list
-    for b, c in bonds:
-        if not are_bonded(frame, b, c):
+    dihedrals = []
+    # Build stricter bond list for dihedrals
+    dihedral_cutoffs = natural_cutoffs(frame, mult=dihedral_tolerance)
+    dihedral_nl = NeighborList(dihedral_cutoffs, self_interaction=False, bothways=True)
+    dihedral_nl.update(frame)
+    
+    dihedral_bonds = []
+    for i in range(len(frame)):
+        indices, offsets = dihedral_nl.get_neighbors(i)
+        for j in indices:
+            if j > i:
+                dihedral_bonds.append((int(i), int(j)))
+    
+    # Build connectivity for dihedrals from strictest bonds
+    dihedral_connectivity = {}
+    for i, j in dihedral_bonds:
+        dihedral_connectivity.setdefault(i, set()).add(j)
+        dihedral_connectivity.setdefault(j, set()).add(i)
+
+    # Build dihedrals from dihedral connectivity
+    dihedrals = []
+    for b, c in dihedral_bonds:
+        if b not in dihedral_connectivity or c not in dihedral_connectivity:
             continue
-        b_neighbors, _ = dihedral_nl.get_neighbors(b)
-        c_neighbors, _ = dihedral_nl.get_neighbors(c)
+        
+        a_neighbors = dihedral_connectivity[b] - {c}
+        d_neighbors = dihedral_connectivity[c] - {b}
 
-        for a in b_neighbors:
-            if a != c and are_bonded(frame, a, b):
-                for d in c_neighbors:
-                    if d != b and d != a and are_bonded(frame, c, d):
-                        dihedral = (int(a), int(b), int(c), int(d))
-                        dihedrals.append(dihedral)
-                        dihedrals.append((int(a), int(b), int(c), int(d)))
+        for a in a_neighbors:
+            for d in d_neighbors:
+                if a != d:
+                    dihedrals.append((int(a), int(b), int(c), int(d)))
 
     return {'bonds': bonds, 'angles': angles, 'dihedrals': dihedrals}
 

@@ -6,6 +6,10 @@ from ase import Atoms
 from ase.io import write as ase_write
 import cclib
 import tempfile
+from typing import List, Sequence, Optional
+import os
+from ase import Atoms
+from ase.io import write
 
 def get_orca_pltvib_path():
     """Find orca_pltvib executable in the same directory as orca"""
@@ -46,18 +50,73 @@ def get_orca_frequencies(orca_file):
     freqs = [f for f in freqs if abs(f) > 1e-5]
     return freqs
 
-def write_displaced_structures(frames, prefix, indices: list = [1,-1], output_dir="."):
+def write_displaced_structures(frames: Sequence[Atoms],
+                               prefix: str,
+                               indices: Optional[List[int]] = None,
+                               ts_frame: int = 0,
+                               overwrite: bool = True) -> List[str]:
     """
-    Write frames at given indices as separate XYZ files.
-    indices: list of frame indices (e.g., [1, -1] for 2nd and last)
-    Names files as <prefix>_F.xyz and <prefix>_R.xyz (Forward/Reverse).
+    Minimal displaced structure writer.
+
+    Behavior:
+      - If indices provided:
+          * Use first index -> {prefix}_F.xyz
+          * Use second (if present) -> {prefix}_R.xyz
+          * Ignore extras.
+      - If indices is None:
+          * Try (ts_frame-1, ts_frame+1)
+          * If out of range, fallback to (0, len(frames)-1)
+      - Negative indices allowed (Python style).
+      - Single index -> only _F written.
+
+    Returns list of written file paths.
     """
-    labels = ["F", "R"]  # Forward and Reverse
-    for label, idx in zip(labels, indices):
-        frame = frames[idx]
-        filename = os.path.join(output_dir, f"{prefix}_{label}.xyz")
-        ase_write(filename, frame)
-        print(f"Written displaced structure to: {filename}")
+    written = []
+    if not frames or len(frames) < 2:
+        return written
+
+    n = len(frames)
+
+    def norm(i: int) -> Optional[int]:
+        return i % n if -n <= i < n else None
+
+    if indices is None:
+        a = norm(ts_frame - 1)
+        b = norm(ts_frame + 1)
+        if a is None or b is None or a == b:
+            a, b = 0, n - 1
+        indices = [a, b]
+    else:
+        # Keep only first two valid normalized indices
+        normed = []
+        for raw in indices:
+            ni = norm(raw)
+            if ni is not None:
+                normed.append(ni)
+            if len(normed) == 2:
+                break
+        indices = normed
+
+    if not indices:
+        return written
+
+    # First index (_F)
+    f_idx = indices[0]
+    f_path = f"{prefix}_F.xyz"
+    if overwrite or not os.path.exists(f_path):
+        write(f_path, frames[f_idx], format='xyz')
+    written.append(f_path)
+
+    # Optional second index (_R)
+    if len(indices) > 1:
+        r_idx = indices[1]
+        if r_idx != f_idx:
+            r_path = f"{prefix}_R.xyz"
+            if overwrite or not os.path.exists(r_path):
+                write(r_path, frames[r_idx], format='xyz')
+            written.append(r_path)
+
+    return written
 
 def write_trajectory(trj_data, base_name, no_save=False, silent=False):
     """

@@ -14,7 +14,8 @@ dependencies = [
     "ase",
     "cclib",
     "rdkit", 
-    "networkx" 
+    "networkx",
+    "xyzgraph"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -30,6 +31,3 @@ vib_analysis = "vib_analysis.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"vib_analysis.data" = ["*.json", "*.yaml"]

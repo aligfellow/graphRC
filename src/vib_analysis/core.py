@@ -31,7 +31,7 @@ def read_xyz_trajectory(file_path):
         raise ValueError(f"Exiting: Only one geometry found, make sure that this is a trj file with at least 2 frames.")
     return frames
 
-def build_internal_coordinates(frame, bond_tolerance=1.5, angle_tolerance=1.1, dihedral_tolerance=1.1):
+def build_internal_coordinates(frame, bond_tolerance=1.4, angle_tolerance=1.1, dihedral_tolerance=1.1):
     """Builds internal coordinates (bonds, angles, dihedrals) for a given ASE Atoms frame."""
     cutoffs = natural_cutoffs(frame, mult=bond_tolerance)
     nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
@@ -277,4 +277,3 @@ def analyze_internal_displacements(
         "frame_indices": selected_indices,
         "atom_index_map": atom_index_map,
     }
-

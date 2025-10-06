@@ -1,5 +1,6 @@
-# Vibrational Analysis
-A command line and python package to read frequency calculation outputs or vibrational trajectories and return the internal coordinates associated with the vibration. *i.e.* a fast TS mode identification
+# vib_analysis
+
+Vibrational mode structural interpretation + lightweight graph transformation detection.
 
 [![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis)
 
@@ -15,6 +16,108 @@ cd vib_analysis
 pip install .
 ```
 
+## Core Pipeline
+
+1. Trajectory extraction  
+   - Parsed from XYZ or QM output (cclib first; ORCA + orca_pltvib fallback).
+2. Internal coordinate screening  
+   - Significant bonds / angles / dihedrals via thresholds.
+3. TS graph construction (`graph_compare.build_ts_reference_graph`)  
+   - Base graph from `xyzgraph.build_graph`.  
+   - Vibrational bond candidates from internal bond_changes.  
+   - Pre-processing:
+     - Cyclic proton transfer logic:
+       - Force inclusion of donor–H–acceptor–H–donor legs (`vib_forced_cycle=True`).
+       - Prune weak metal–H when overshadowed by stronger hetero–H contacts.
+     - Geometric filtering removes tiny artificial 3‑cycles and path shortcuts (distance redundancy).
+   - Subset scoring prefers:
+     - Ring closure (5/6) formation
+     - Strong geometry (ratio below threshold)
+     - Large |Δ| displacement
+     - Penalizes redundant near-parallel edges.
+4. TS augmentation  
+   - Selected edges tagged: `vib_identified`, `vib_selected`, `vib_delta`, optional `vib_forced_cycle`.
+5. Displaced frame graphs (two frames around TS)  
+   - Start as TS copy.  
+   - Hysteretic pruning:
+     - Keep: ratio ≤ threshold + keep_slack
+     - Remove: ratio > threshold + removal_margin
+     - Borderline retained + annotated.
+6. Mode modulation refinement  
+   - Per vib TS edge store per-frame ratios + `vib_ratio_span = |r1 - r2|`.
+   - Static pruning: remove edges with insufficient span (< adaptive threshold):
+     - Metal–H stricter (×1.25)
+     - Hetero–H slightly looser (×0.85)
+     - Forced cycle looser (×0.80).
+   - Marks `vib_static_removed`.
+7. Optional recovery (debug)  
+   - Re-add top-|Δ| vib edges missing in both displaced graphs.
+8. Comparison  
+   - Formed / broken edges detected only between displaced graphs.
+   - ASCII tri-panel (TS / frame1 / frame2) with consistent orientation.
+
+## Key Edge Attributes
+
+| Attribute | Meaning |
+|-----------|---------|
+| vib_identified | Came from vibrational candidate list |
+| vib_selected | Survived scoring/filtering |
+| vib_forced_cycle | Added by cyclic proton transfer inference |
+| vib_delta | Displacement magnitude driver |
+| vib_ratio_span | Variation between displaced frames |
+| vib_static_removed | Pruned for low modulation |
+| vib_retained / vib_borderline | Survived hysteretic pruning |
+
+## CLI (excerpt)
+
+```
+python -m vib_analysis.cli input.out --mode 0 --graph --debug \
+  --ascii-shells 1 --ascii-scale 2.5 --show-h
+```
+
+Important flags:
+- `--graph` enable graph transformation layer
+- `--frames i j` override auto-selected displaced frames
+- `--ascii-shells N` neighbor expansion around transformation core (default 1)
+- `--debug` attaches vib overview tables: `ts_vib_overview`, `vib_bond_table`
+- `--displacement-amplitude k` saves symmetric displaced pair (k=1..4)
+
+## Interpretation Guide
+
+- Bond “formed” = present only in the second displaced graph.
+- Bond “broken” = present only in the first displaced graph.
+- Proton transfer cycles: look for contiguous donor–H–acceptor–H–donor path with all edges TS‑tagged.
+- Static noise removed: edges with tiny span (< ~0.06 adjusted) suppressed before comparison.
+
+## Debug Structures
+
+When `--debug`:
+- `ts_vib_overview`: counts of vib_* tags + span statistics.
+- `vib_bond_table`: per-edge rows (bond, symbols, delta, span, thresholds, state).
+
+## Dependencies
+
+Core:
+- xyzgraph
+- ase
+- networkx
+Optional (input parsing):
+- cclib
+ORCA helper:
+- orca + orca_pltvib in PATH
+
+## Return Objects (API)
+
+`run_vib_analysis(...)` returns:
+```
+{
+  frames, freqs,
+  vibrational: { bond_changes, angle_changes, ... },
+  graph: { comparison, ts_stats, frame1_stats, frame2_stats, ascii_ts, ... },
+  ts_vib_overview (debug),
+  vib_bond_table (debug)
+}
+```
 
 ## Usage
 >[!Note]

@@ -165,7 +165,7 @@ def run_vib_analysis(
             else:
                 if print_output:
                     print("No valid neighboring frames to save displaced structures.")
-    return {
+    out = {
         "frames": frames,
         "freqs": freqs,
         "vibrational": vib_results,
@@ -175,6 +175,11 @@ def run_vib_analysis(
             "enable_graph": enable_graph,
             "graph_frames": resolved_frames,
             "save_level": save_displacement_amplitude
-            # REMOVED: highlight_ts_bonds
         }
     }
+    # NEW: surface vib debug tables if present
+    if graph_results and debug:
+        for k in ("ts_vib_overview", "vib_bond_table"):
+            if k in graph_results:
+                out[k] = graph_results[k]
+    return out

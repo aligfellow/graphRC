@@ -118,7 +118,7 @@ def main():
                        help='Scale for ASCII molecular rendering (default: 3.0)')
     parser.add_argument('--show-h', action='store_true',
                        help='Show hydrogen atoms in ASCII rendering')
-    parser.add_argument('--ascii-shells', type=int, default=2,
+    parser.add_argument('--ascii-shells', type=int, default=1,
                        help='Neighbor shells around transformation core (default: 1)')
     
     # Other options

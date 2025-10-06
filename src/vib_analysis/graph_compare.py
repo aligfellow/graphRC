@@ -169,22 +169,25 @@ def _filter_vib_candidates(base_graph: nx.Graph,
     filtered = []
     for c in candidates:
         i, j = c["bond"]
-        # Skip if already an edge; let later logic just annotate
+        reasons = []
         if c.get("already"):
+            c["filter_reasons"] = ["existing_edge"]
             filtered.append(c)
             continue
-        # Shortest path check
         if not allow_shortcuts and nx.has_path(base_graph, i, j):
             try:
                 sp_len = nx.shortest_path_length(base_graph, i, j)
                 if sp_len <= 2:
-                    # Shortcut (e.g. forming artificial triangle) – skip
-                    continue
+                    reasons.append(f"shortest_path_{sp_len}")
             except Exception:
                 pass
-        # Tiny cycle check
-        if avoid_small_cycles and _creates_small_cycle(base_graph, i, j, max_cycle=small_cycle_size):
+        if avoid_small_cycles and not reasons:
+            if _creates_small_cycle(base_graph, i, j, max_cycle=small_cycle_size):
+                reasons.append("tiny_cycle")
+        if reasons:
+            c["filter_reasons"] = reasons
             continue
+        c["filter_reasons"] = []
         filtered.append(c)
     return filtered
 
@@ -538,13 +541,30 @@ def _enforce_static_vib_bond_prune(ts_graph: nx.Graph,
         span = data.get('vib_ratio_span')
         if span is None:
             continue
-        if span < variation_min:
+        sym_i = ts_graph.nodes[i].get('symbol')
+        sym_j = ts_graph.nodes[j].get('symbol')
+        has_h = ('H' in (sym_i, sym_j))
+        metal_set = {'Mn','Fe','Co','Ni','Cu','Zn','Ru','Rh','Pd','Ir','Pt'}
+        hetero = {'O','N','S','P'}
+        is_metal_h = has_h and ((sym_i in metal_set) or (sym_j in metal_set))
+        involves_hetero = (sym_i in hetero) or (sym_j in hetero)
+        base = variation_min
+        if is_metal_h:
+            span_thr = base * 1.25
+        elif involves_hetero and has_h:
+            span_thr = base * 0.85
+        elif data.get('vib_forced_cycle'):
+            span_thr = base * 0.80
+        else:
+            span_thr = base
+        data['vib_static_span_threshold'] = span_thr  # record
+        data['vib_static_span'] = span
+        if span < span_thr:
             if g1.has_edge(i, j):
                 g1.remove_edge(i, j); rem1 += 1
             if g2.has_edge(i, j):
                 g2.remove_edge(i, j); rem2 += 1
             data['vib_static_removed'] = True
-            data['vib_static_variation_min'] = variation_min
     return {"static_removed_frame1": rem1, "static_removed_frame2": rem2}
 
 # --- NEW: recovery + detailed final report ---
@@ -622,6 +642,29 @@ def _debug_vib_summary(ts_graph: nx.Graph,
             reason = g[i][j].get('vib_prune_reason') if present else 'removed'
             line += f"{tag}:(ratio={r:.3f} thr={thr:.2f} {'P' if present else 'X'} {reason}) "
         logger.debug(line)
+
+# --- NEW: structured vib bond summary ---
+def summarize_vib_bonds(ts_graph: nx.Graph) -> List[Dict[str,Any]]:
+    """
+    Structured per-bond summary for debugging / export.
+    """
+    rows = []
+    for i, j, d in ts_graph.edges(data=True):
+        if not d.get('vib_identified'):
+            continue
+        rows.append({
+            "bond": (i, j),
+            "symbols": (ts_graph.nodes[i].get('symbol'), ts_graph.nodes[j].get('symbol')),
+            "delta": d.get('vib_delta'),
+            "forced_cycle": d.get('vib_forced_cycle', False),
+            "selected": d.get('vib_selected', False),
+            "static_removed": d.get('vib_static_removed', False),
+            "span": d.get('vib_ratio_span'),
+            "span_thr": d.get('vib_static_span_threshold'),
+            "state": d.get('vib_state'),
+            "filter_reasons": d.get('vib_filter_reasons', []),
+        })
+    return rows
 
 # ===================== ANALYSIS (patch only where displaced graphs built) =====================
 
@@ -723,6 +766,13 @@ def analyze_displacement_graphs(frames: List[Atoms],
         },
         "comparison": comp
     }
+    # NEW: attach debug vib summaries
+    if debug:
+        try:
+            results["ts_vib_overview"] = debug_ts_logic_overview(g_ts)
+            results["vib_bond_table"] = summarize_vib_bonds(g_ts)
+        except Exception as e:
+            logger.debug(f"Vib overview attach failed: {e}")
     try:
         ascii_pkg = generate_transformation_ascii_with_ts(
             g_ts, g1, g2, comp,
@@ -795,28 +845,22 @@ def generate_transformation_ascii_with_ts(graph_ts: nx.Graph,
                                          comparison: Dict[str, Any],
                                          neighbor_shells: int = 1,
                                          scale: float = 3.0,
-                                         include_h: bool = True) -> Dict[str, Any]:  # NEW
+                                         include_h: bool = True) -> Dict[str, Any]:
     """
     Generate ASCII with TS as orientation reference.
-    Shows: TS, frame1, frame2 with consistent orientation.
-    
-    Includes all atoms involved in:
-    1. Displaced frame transformations (formed/broken/order changed)
-    2. TS vibrational bonds (even if not in displaced frames)
+    Includes atoms participating in:
+      - Formed/broken/order-changed bonds (comparison dict)
+      - All TS vibrational bonds (edges with vib_identified)
+    Expanded by neighbor_shells in the TS graph.
     """
-    # Get core from displaced frame comparison
+    # Core from formed/broken/order-changed
     core_from_comparison = set(_collect_transformation_nodes(comparison))
-    
-    # Also collect atoms from TS vibrational bonds
+    # Core from TS vibrational bonds
     core_from_ts_vib = set()
-    for i, j, data in graph_ts.edges(data=True):
-        if data.get('vib_identified', False):
-            core_from_ts_vib.add(i)
-            core_from_ts_vib.add(j)
-    
-    # Combine both sources
+    for i, j, d in graph_ts.edges(data=True):
+        if d.get('vib_identified'):
+            core_from_ts_vib.add(i); core_from_ts_vib.add(j)
     core = sorted(core_from_comparison | core_from_ts_vib)
-    
     if not core:
         return {
             "ascii_ts": "<no change>",
@@ -825,18 +869,10 @@ def generate_transformation_ascii_with_ts(graph_ts: nx.Graph,
             "nodes": [],
             "core_nodes": []
         }
-    
-    logger.debug(f"ASCII core nodes: {len(core_from_comparison)} from comparison + {len(core_from_ts_vib)} from TS vib bonds = {len(core)} total")
-    
-    # Expand around transformation core
     expanded = _expand_with_neighbors(graph_ts, core, depth=neighbor_shells)
-    
-    # Extract subgraphs
     sub_ts = graph_ts.subgraph(expanded).copy()
     sub_1 = graph_1.subgraph(expanded).copy()
     sub_2 = graph_2.subgraph(expanded).copy()
-    
-    # Render: TS sets orientation, others follow
     try:
         ascii_ts = graph_to_ascii(sub_ts, scale=scale, include_h=include_h, reference=None)
         ascii_1 = graph_to_ascii(sub_1, scale=scale, include_h=include_h, reference=sub_ts)
@@ -850,7 +886,6 @@ def generate_transformation_ascii_with_ts(graph_ts: nx.Graph,
             "nodes": expanded,
             "core_nodes": core
         }
-
     return {
         "ascii_ts": ascii_ts,
         "ascii_ref": ascii_1,
@@ -1043,6 +1078,84 @@ def print_graph_analysis(graph_results: Dict[str, Any],
         print(graph_results.get('ascii_disp', '<no ascii_disp>'))
     print("="*80)
 
+# === PIPELINE OVERVIEW (added) =================================================
+# 1. TS base graph: build_graph() infers baseline bonding from TS Cartesian geometry.
+# 2. Vibrational change candidates: internal_changes['bond_changes'] supplies (i,j)->(delta,initial_distance).
+# 3. Pre-processing:
+#    - _apply_cyclic_proton_transfer_logic:
+#         * prunes weak metal–H when a stronger hetero–H dominates same H
+#         * forces inclusion of cyclic proton-transfer legs (donor–H–acceptor–H–donor)
+# 4. Candidate evaluation:
+#    - geometric screen (_filter_vib_candidates) removes tiny cycles / shortcuts
+#    - scoring (_score_subset / _select_vib_subset) keeps a consistent minimal set
+#    - forced cycle edges always restored
+# 5. TS augmentation: selected (and forced) edges annotated with vib_* flags + TS=True
+# 6. Displaced graphs (two frames around TS):
+#    - start as copies of TS graph
+#    - hysteretic pruning removes vib edges too long (ratio > thr+margin) but retains borderline
+# 7. Mode-based refinement:
+#    - _annotate_vib_bond_states records per-frame ratios + presence flags
+#    - _enforce_static_vib_bond_prune eliminates vib edges whose ratio span (|r1-r2|) is too small (not modulated by mode)
+# 8. Comparison: compare_graphs() classifies formed/broken between displaced frames only
+# 9. Optional recovery (debug) may re-add top-delta vib bonds removed in both frames
+#
+# Interpretation rule-of-thumb now:
+#   - A bond is considered “made” in frame2 vs frame1 if present only in frame2
+#   - “Broken” if present only in frame1
+#   - Static vib TS edges (little modulation) are suppressed before comparison to reduce noise
+#
+# This matches the conceptual model you described. Remaining “smart” parts:
+#   * selective forcing of proton transfer cycles
+#   * pruning of spurious metal–H when overshadowed by hetero–H
+#   * variation-based (span) static filtering rather than absolute ratio cutoff
+#   * optional recovery to avoid over-pruning aggressive geometry screens.
+#
+# TODO ideas (not implemented):
+#   - Replace subset enumeration with a greedy marginal gain if candidate set grows
+#   - Weight scoring by normalized delta / (initial distance) for scale invariance
+#   - Track alternative classifications (e.g., multi-step vs concerted) via temporal ordering of ratio changes.
+
+def debug_ts_logic_overview(graph_ts: nx.Graph) -> Dict[str, Any]:
+    """
+    Lightweight snapshot of TS vib logic decisions for external auditing.
+    Returns:
+      counts: dict of vib edge tag frequencies
+      forced_cycle_edges: list of edges flagged vib_forced_cycle
+      static_removed_edges: list of vib edges pruned later (if annotate already ran)
+      span_stats: min/avg/max ratio span for vib edges
+    """
+    vib_edges = [(i,j,d) for i,j,d in graph_ts.edges(data=True) if d.get('vib_identified')]
+    forced = []
+    static_removed = []
+    spans = []
+    tags = {}
+    for i,j,d in vib_edges:
+        if d.get('vib_forced_cycle'):
+            forced.append((i,j))
+        if d.get('vib_static_removed'):
+            static_removed.append((i,j))
+        if 'vib_ratio_span' in d:
+            spans.append(d['vib_ratio_span'])
+        for k,v in d.items():
+            if k.startswith('vib_') and v is True:
+                tags[k] = tags.get(k,0)+1
+    if spans:
+        span_stats = {
+            "min": float(min(spans)),
+            "avg": float(sum(spans)/len(spans)),
+            "max": float(max(spans)),
+            "n": len(spans)
+        }
+    else:
+        span_stats = {"min":None,"avg":None,"max":None,"n":0}
+    return {
+        "counts": tags,
+        "forced_cycle_edges": forced,
+        "static_removed_edges": static_removed,
+        "span_stats": span_stats,
+        "total_vib_edges": len(vib_edges)
+    }
+
 __all__ = [
     "build_ts_reference_graph",
     "build_displaced_graph",
@@ -1050,4 +1163,5 @@ __all__ = [
     "compare_graphs",
     "print_graph_analysis",
     "generate_transformation_ascii_with_ts",
+    "debug_ts_logic_overview",
 ]

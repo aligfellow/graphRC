@@ -137,7 +137,7 @@ def save_displacement_pair(
     frames: List[Atoms],
     ts_frame: int,
     output_prefix: str,
-    level: int = 1,
+    scale: int = 1,
     max_level: int = 4,
     verbose: bool = False,
 ) -> Optional[Tuple[str, str]]:

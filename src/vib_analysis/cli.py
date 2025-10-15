@@ -15,28 +15,13 @@ def main():
     parser = argparse.ArgumentParser(
         description='Analyze vibrational trajectories for structural changes',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Analyze mode 0 of ORCA output
-  %(prog)s calculation.out -m 0
-  
-  # Analyze XYZ trajectory with graph analysis
-  %(prog)s trajectory.xyz --graph
-  
-  # Save displaced structures at amplitude level 2
-  %(prog)s calculation.out -m 0 --save-displacement --level 2
-  
-  # Custom thresholds for bond/angle detection
-  %(prog)s trajectory.xyz --bond-threshold 0.3 --angle-threshold 15.0
-        """
     )
     
     # Input/output
     parser.add_argument('input', help='Input file (XYZ trajectory or QM output)')
-    parser.add_argument('-o', '--output', help='Output file for results (not implemented)')
     
     # Mode selection
-    parser.add_argument('-m', '--mode', type=int, default=0,
+    parser.add_argument('--mode', '-m', type=int, default=0,
                        help='Vibrational mode to analyze (default: 0, ignored for XYZ)')
     parser.add_argument('--ts-frame', type=int, default=0,
                        help='Frame index to use as TS reference (default: 0)')
@@ -57,12 +42,12 @@ Examples:
                           help=f'Threshold for significant dihedral changes in degrees (default: {config.DIHEDRAL_THRESHOLD})')
     vib_group.add_argument('--bond-stability', type=float, default=config.BOND_STABILITY_THRESHOLD,
                           help=f'Bond stability threshold for filtering coupled changes in Å (default: {config.BOND_STABILITY_THRESHOLD}, advanced)')
-    vib_group.add_argument('-a', '--all', action='store_true',
+    vib_group.add_argument('--all', '-a', action='store_true',
                           help='Report all changes including minor ones')
     
     # Graph analysis
     graph_group = parser.add_argument_group('graph analysis parameters')
-    graph_group.add_argument('-g', '--graph', action='store_true',
+    graph_group.add_argument('--graph', '-g', action='store_true',
                             help='Enable graph-based analysis')
     graph_group.add_argument('--method', default='cheminf',
                             choices=['cheminf', 'xtb'],
@@ -76,27 +61,27 @@ Examples:
     
     # ASCII visualization
     ascii_group = parser.add_argument_group('ASCII rendering options')
-    ascii_group.add_argument('--ascii-scale', type=float, default=config.ASCII_SCALE,
+    ascii_group.add_argument('--ascii-scale', '-as', type=float, default=config.ASCII_SCALE,
                             help=f'Scale for ASCII molecular rendering (default: {config.ASCII_SCALE})')
     ascii_group.add_argument('--show-h', action='store_true',
                             help='Show hydrogen atoms in ASCII rendering')
-    ascii_group.add_argument('--ascii-shells', type=int, default=config.ASCII_NEIGHBOR_SHELLS,
+    ascii_group.add_argument('--ascii-shells', '-ash', type=int, default=config.ASCII_NEIGHBOR_SHELLS,
                             help=f'Neighbor shells around transformation core (default: {config.ASCII_NEIGHBOR_SHELLS})')
     
     # Output options
     output_group = parser.add_argument_group('output options')
-    output_group.add_argument('--save-displacement', action='store_true',
+    output_group.add_argument('--save-displacement', '-sd', action='store_true',
                              help='Save displaced structure pair')
-    output_group.add_argument('--level', type=int, default=config.DEFAULT_DISPLACEMENT_LEVEL,
+    output_group.add_argument('--displacement-scale', '-ds', type=int, default=config.DEFAULT_DISPLACEMENT_LEVEL,
                              help=f'Displacement level (1-{config.MAX_DISPLACEMENT_LEVEL}, ~0.2-0.8 amplitude) (default: {config.DEFAULT_DISPLACEMENT_LEVEL})')
     output_group.add_argument('--no-save', action='store_true',
                              help='Do not save trajectory to disk (keep in memory only)')
     output_group.add_argument('--orca-path', help='Path to ORCA executable directory')
     
     # Logging
-    parser.add_argument('-v', '--verbose', action='store_true',
+    parser.add_argument('--verbose', '-v', action='store_true',
                        help='Enable verbose output')
-    parser.add_argument('-d', '--debug', action='store_true',
+    parser.add_argument('--debug', '-d', action='store_true',
                        help='Enable debug output')
     
     args = parser.parse_args()
@@ -132,7 +117,7 @@ Examples:
             # Output options
             save_trajectory=not args.no_save,
             save_displacement=args.save_displacement,
-            displacement_level=args.level,
+            displacement_scale=args.displacement_scale,
             orca_pltvib_path=args.orca_path,
             print_output=True,  # CLI always prints output
             verbose=args.verbose,
@@ -145,7 +130,6 @@ Examples:
         sys.exit(1)
     
     # Results are printed by run_analysis when print_output=True
-
 
 if __name__ == "__main__":
     main()

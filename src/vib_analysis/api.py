@@ -127,7 +127,7 @@ def run_analysis(
     # Output options
     save_trajectory: bool = config.SAVE_TRAJECTORY_DEFAULT,
     save_displacement: bool = config.SAVE_DISPLACEMENT_DEFAULT,
-    displacement_level: int = config.DEFAULT_DISPLACEMENT_LEVEL,
+    displacement_scale: int = config.DEFAULT_DISPLACEMENT_LEVEL,
     orca_pltvib_path: Optional[str] = None,
     print_output: bool = False,
     verbose: bool = False,
@@ -160,7 +160,7 @@ def run_analysis(
         
         save_trajectory: Save converted trajectory to disk
         save_displacement: Save displaced structure pair
-        displacement_level: Displacement amplitude level (1-4)
+        displacement_scale: Displacement amplitude level (1-4)
         orca_pltvib_path: Path to orca_pltvib executable
         print_output: Print formatted analysis results to console
         verbose: Print status messages
@@ -240,7 +240,7 @@ def run_analysis(
             frames=frames,
             ts_frame=ts_frame,
             output_prefix=output_prefix,
-            level=displacement_level,
+            scale=displacement_scale,
             max_level=config.MAX_DISPLACEMENT_LEVEL,
             verbose=verbose,
         )

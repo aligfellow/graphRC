@@ -29,7 +29,6 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 ✅ **Automatic trajectory extraction** from XYZ files or QM output (ORCA, Gaussian via cclib)  
 ✅ **Internal coordinate tracking** - identifies significant bond, angle, and dihedral changes  
 ✅ **Smart filtering** - separates primary changes from coupled secondary effects  
-✅ **Zero-indexed atom numbering** for programmatic access
 
 ### Graph-Based Analysis (Optional)
 🔍 **Bond formation/cleavage detection**  
@@ -37,7 +36,9 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 🔍 **Formal charge redistribution** tracking  
 🔍 **ASCII molecular visualization** of transformations
 
-> **⚠️ Important:** Bond orders and formal charges are **empirically assigned** by [xyzgraph](https://github.com/digital-chemistry-laboratory/xyzgraph) and should be treated as **indicative only**. They are particularly unreliable for metal-containing systems. Use them as qualitative guides, not quantitative predictions.
+>[!IMPORTANT]
+> Bond orders and formal charges are **empirically assigned** by [xyzgraph](https://github.com/aligfellow/xyzgraph) and should be treated as **indicative only**. They are particularly unreliable for metal-containing systems. Use them as qualitative guides, not quantitative predictions.
+> Needs installed for this analysis `pip install git+https://github.com/aligfellow/xyzgraph.git`
 
 ---
 
@@ -48,7 +49,7 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 pip install vib-analysis
 ```
 
-### From Source
+### From Source (*up-to-date*)
 ```bash
 git clone https://github.com/aligfellow/vib_analysis.git
 cd vib_analysis
@@ -60,7 +61,7 @@ pip install .
 - `ase` - Atomic Simulation Environment
 - `numpy` - Numerical operations
 - `networkx` - Graph operations
-- `xyzgraph` - Molecular graph construction (does the heavy lifting for graph analysis!)
+- `xyzgraph` - Molecular graph construction (does the graph analysis)
 
 **Optional:**
 - `cclib` - Parsing Gaussian/ORCA output
@@ -114,29 +115,29 @@ vib_analysis calculation.out --save-displacement
 │  3. Filter by thresholds (bond_threshold, angle_threshold)      │
 │  4. Classify: primary vs coupled secondary changes              │
 │                                                                 │
-│  Output: bond_changes, angle_changes, dihedral_changes         │
+│  Output: bond_changes, angle_changes, dihedral_changes          │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
                     ┌────────┴────────┐
-                    │  Graph Analysis? │
-                    └────────┬────────┘
-                         Yes │        No
-                             ▼         │
+                    │  Graph Analysis?│
+                    └────────┬──────┬─┘
+                         Yes │   No └─────────────────────────────┐
+                             ▼                                    │
 ┌─────────────────────────────────────────────────────┐           │
 │    STEP 3: GRAPH-BASED ANALYSIS (Optional)          │           │
 │              (graph_compare.py)                     │           │
 │                                                     │           │
 │  Uses xyzgraph to:                                  │           │
-│  ┌─────────────────────────────────────────────┐   │           │
-│  │ 1. Build molecular graphs                   │   │           │
-│  │    • Transition state graph                 │   │           │
-│  │    • Displaced frame graphs                 │   │           │
-│  │                                              │   │           │
-│  │ 2. Assign bond orders (empirical!)          │   │           │
-│  │                                              │   │           │
-│  │ 3. Assign formal charges (empirical!)       │   │           │
-│  └─────────────────────────────────────────────┘   │           │
+│  ┌─────────────────────────────────────────────┐    │           │
+│  │ 1. Build molecular graphs                   │    │           │
+│  │    • Transition state graph                 │    │           │
+│  │    • Displaced frame graphs                 │    │           │
+│  │                                             │    │           │
+│  │ 2. Assign bond orders (empirical!)          │    │           │
+│  │                                             │    │           │
+│  │ 3. Assign formal charges (empirical!)       │    │           │
+│  └─────────────────────────────────────────────┘    │           │
 │                                                     │           │
 │  Our code then:                                     │           │
 │  • Compares TS vs displaced graphs                  │           │
@@ -171,12 +172,11 @@ vib_analysis calculation.out --save-displacement
 - Calculates formal charges using valence rules
 - Provides the graph infrastructure we build upon
 
-**Our Analysis:**
+**Core Analysis:**
 - Selects relevant frames for comparison
 - Identifies which bonds/angles/dihedrals change
 - Compares graphs to detect transformations
 - Filters and classifies changes
-- Formats output for users
 
 ---
 
@@ -209,7 +209,7 @@ Bond (0, 5)  [C-Cl]  Δ =   1.355 Å,  Initial =   1.952 Å
 ================================================================================
 ```
 
-**Interpretation:** Classic SN2 mechanism - C-F bond breaking (1.58 Å change) concurrent with C-Cl bond forming (1.36 Å change).
+**Interpretation:** Classic SN2 mechanism - C-F bond breaking concurrent with C-Cl bond forming.
 
 ---
 
@@ -266,21 +266,31 @@ Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
 ================================================================================
 ```
 
-**Interpretation:** Two significant bond changes detected - O-C formation and C-C breaking.
+**Interpretation:** Two significant bond changes detected - O-C formation and C-C breaking (formal \[2,3]-rearrangement).
 
 ---
 
 ### Example 4: With Graph Analysis & Charge Redistribution
 
 ```bash
-vib_analysis examples/data/bimp.v000.xyz --graph
+vib_analysis examples/data/bimp.out -g
 ```
 
 **Output (excerpt):**
 ```
+vib_analysis examples/data/bimp.out -g -as 2
 ================================================================================
                               VIB_ANALYSIS
 ================================================================================
+
+Analyzed Mode 0: -333.88 cm⁻¹ (imaginary)
+
+First 5 non-zero vibrational frequencies:
+  Mode 0: -333.88 cm⁻¹ (imaginary)
+  Mode 1: 8.57 cm⁻¹
+  Mode 2: 12.72 cm⁻¹
+  Mode 3: 13.27 cm⁻¹
+  Mode 4: 15.83 cm⁻¹
 
 ================================================================================
                          VIBRATIONAL GRAPH ANALYSIS SUMMARY
@@ -304,7 +314,62 @@ Formal Charge Redistribution (4 atoms):
   Atom 2 [N]: charge +1→+0 (Δq = -1.00)
   Atom 11 [O]: charge -1→+0 (Δq = +1.00)
   Atom 12 [C]: charge -1→+0 (Δq = +1.00)
-  Atom 31 [N]: charge +1→+0 (Δq = +1.00)
+  Atom 31 [N]: charge +1→+0 (Δq = -1.00)
+
+================================================================================
+ASCII REPRESENTATIONS
+================================================================================
+
+Transition State (TS):
+
+           C‖
+           ‖‖
+           ‖‖
+            ‖‖
+            ‖‖    ------O
+C-----------C‖----       **
+            *              *
+            *               **
+           *                 /C
+           *                /
+          -C==           ///
+      ---- =========    /
+  ----        ========C/
+C-                  ===
+
+Frame 1:
+
+           C
+           |
+           |
+            |
+            |     ------O
+C-----------C-----
+            |
+            |
+           |                 /C
+           |                /
+          -C--           ///
+      ----    ------    /
+  ----              --C/
+C-
+
+Frame 2:
+
+           C‖
+           ‖‖
+           ‖‖
+            ‖‖
+            ‖‖    ------O
+C-----------C‖----       \\
+                           \
+                            \\
+                             /C
+                            /
+          -C==           ///
+      ---- =========    /
+  ----        ========C/
+C-                  ===
 
 ================================================================================
                     VIBRATIONAL TRAJECTORY ANALYSIS
@@ -317,7 +382,7 @@ Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
 ================================================================================
 ```
 
-**Interpretation:** Graph analysis reveals a complex rearrangement with bond formation/breaking, multiple bond order changes, and significant charge redistribution. The empirical charges indicate electron density shifts.
+**Interpretation:** Graph analysis reveals a rearrangement with bond formation/breaking, bond order changes, and charge redistribution. 
 
 ---
 
@@ -373,15 +438,15 @@ vib_analysis examples/data/mn.log --all
 ================================================================================
                               VIB_ANALYSIS
 ================================================================================
-Parsing mn.log with cclib...
-Written trajectory to: mn.v000.xyz
+
+Analyzed Mode 0: -748.48 cm⁻¹ (imaginary)
 
 First 5 non-zero vibrational frequencies:
-  Mode 0: -748.48 cm⁻¹  (imaginary)
-  Mode 1: 20.26 cm⁻¹ 
-  Mode 2: 25.12 cm⁻¹ 
-  Mode 3: 32.45 cm⁻¹ 
-  Mode 4: 36.68 cm⁻¹ 
+  Mode 0: -748.48 cm⁻¹ (imaginary)
+  Mode 1: 20.26 cm⁻¹
+  Mode 2: 25.12 cm⁻¹
+  Mode 3: 32.45 cm⁻¹
+  Mode 4: 36.68 cm⁻¹
 
 ================================================================================
                     VIBRATIONAL TRAJECTORY ANALYSIS
@@ -400,12 +465,17 @@ Angle (5, 1, 63)   [N-Mn-H]  Δ =  16.471 °,  Initial =  96.799 °
 Angle (61, 1, 63)  [C-Mn-H]  Δ =  15.528 °,  Initial =  81.202 °
 Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
 
-Note: These angles are dependent on other changes and may not be significant on their own.
+Note: These angles depend on other changes and may not be significant alone.
+
+============================ Minor Dihedral Changes ============================
+Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial = 283.248 °
+
+Note: These dihedrals depend on other changes and may not be significant alone.
 
 ================================================================================
 ```
 
-**Interpretation:** Complex hydrogenation mechanism involving multiple N-H, H-O, and Mn-H bond changes. Note the proper handling of metal-ligand interactions.
+**Interpretation:** Hydrogenation mechanism involving multiple N-H, H-O, and Mn-H bond changes. Note the handling of metal-ligand interactions.
 
 ---
 
@@ -457,8 +527,11 @@ vib_analysis input.xyz -g --charge -1
 ### Output Control
 
 ```bash
-# Save displaced structures at level 2
-vib_analysis input.xyz --save-displacement --level 2
+# Save displaced structures
+vib_analysis input.xyz --save-displacement --displacement-scale 2
+# or
+vib_analysis input.xyz -sd -ds 2
+
 
 # Don't save trajectory to disk
 vib_analysis input.xyz --no-save
@@ -666,23 +739,9 @@ By default, frames with maximum RMSD are selected automatically.
 - ❌ **Unreliable** for transition metals, lanthanides, actinides
 
 **Use as indicators only!** Always cross-validate with:
-- Electronic structure calculations
-- NBO/QTAIM analysis
-- Chemical intuition
-
-### Coordinate Detection
-
-**Bonds:** Detected when distance < `bond_tolerance × (r₁ + r₂)` of covalent radii sum
-
-**Angles:** Three atoms all within `angle_tolerance` threshold
-
-**Dihedrals:** Four consecutive bonded atoms within `dihedral_tolerance`
-
-### Change Classification
-
-**Significant:** Change exceeds threshold AND not coupled to larger primary change
-
-**Minor:** Change exceeds threshold BUT involves atoms with primary bond changes
+- IRC
+- optimisations of displaced structures
+- chemical insight
 
 ### File Formats
 
@@ -703,78 +762,12 @@ Must contain ≥2 frames.
 
 ---
 
-## Tips & Troubleshooting
-
-### Threshold Tuning
-- Increase `bond_threshold` if getting noise from small vibrations
-- Decrease to catch weak interactions
-- Adjust `bond_stability` for metal-ligand or H-bond systems
-
-### Graph Analysis
-- Use `--ascii-shells 1` for focused reactive center view
-- Use `--ascii-shells 2` for broader context
-- Add `--show-h` for hydrogen transfer reactions
-- Adjust `--ascii-scale` for optimal spacing
-
-### Common Issues
-
-**"Only one geometry found"**
-- Check input is multi-frame trajectory
-- For QM output: ensure frequency calculation completed
-
-**"cclib parsing failed"**
-- Older ORCA versions may not be supported
-- Install `orca_pltvib` as fallback
-- Provide `--orca-path` if ORCA not in PATH
-
-**"No significant changes found"**
-- Try lowering thresholds: `--bond-threshold 0.2`
-- Check correct mode selected: `--mode N`
-- Use `--all` to see minor changes
-
----
-
-## Contributing
-
-Contributions welcome! 
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
-
----
-
-## Citation
-
-```bibtex
-@software{vib_analysis,
-  author = {Ali G. Fellow},
-  title = {vib_analysis: Automated vibrational mode analysis},
-  url = {https://github.com/aligfellow/vib_analysis},
-  year = {2024}
-}
-```
-
----
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file
-
----
-
 ## Acknowledgments
 
 - Built with [ASE](https://wiki.fysik.dtu.dk/ase/) for molecular structures
-- Uses [xyzgraph](https://github.com/digital-chemistry-laboratory/xyzgraph) for graph construction (does the heavy lifting!)
+- Uses [xyzgraph](https://github.com/aligfellow/xyzgraph) for graph construction
 - QM output parsing via [cclib](https://github.com/cclib/cclib)
 - Visualization examples with [v.2.0](https://github.com/briling/v) by Ksenia Briling
 
 ---
 
-## Links
-
-- **PyPI**: https://pypi.org/project/vib-analysis/
-- **GitHub**: https://github.com/aligfellow/vib_analysis
-- **Issues**: https://github.com/aligfellow/vib_analysis/issues

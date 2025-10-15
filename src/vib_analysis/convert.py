@@ -1,11 +1,15 @@
-#!/usr/bin/env python3
+"""
+Trajectory conversion utilities for QM output files.
+Handles ORCA and cclib-compatible formats.
+"""
 import os
 import subprocess
 import numpy as np
 from ase import Atoms
-from ase.io import write as ase_write
+from ase.io import write
 import cclib
-import tempfile
+from typing import List, Tuple, Optional
+
 
 def get_orca_pltvib_path():
     """Find orca_pltvib executable in the same directory as orca"""
@@ -21,6 +25,7 @@ def get_orca_pltvib_path():
     
     return pltvib_path
 
+
 def get_orca_frequencies(orca_file):
     """Extract vibrational frequencies from ORCA output"""
     with open(orca_file, 'r') as f:
@@ -30,7 +35,7 @@ def get_orca_frequencies(orca_file):
     if not section_indices:
         raise ValueError("No vibrational frequencies section found in ORCA output.")
     
-    idx = section_indices[-1] # last occurence if multiple are present
+    idx = section_indices[-1]  # last occurrence if multiple are present
     freqs = []
     
     for line in lines[idx:]:
@@ -46,53 +51,23 @@ def get_orca_frequencies(orca_file):
     freqs = [f for f in freqs if abs(f) > 1e-5]
     return freqs
 
-def write_displaced_structures(frames, prefix, indices: list = [1,-1], output_dir="."):
-    """
-    Write frames at given indices as separate XYZ files.
-    indices: list of frame indices (e.g., [1, -1] for 2nd and last)
-    Names files as <prefix>_F.xyz and <prefix>_R.xyz (Forward/Reverse).
-    """
-    labels = ["F", "R"]  # Forward and Reverse
-    for label, idx in zip(labels, indices):
-        frame = frames[idx]
-        filename = os.path.join(output_dir, f"{prefix}_{label}.xyz")
-        ase_write(filename, frame)
-        print(f"Written displaced structure to: {filename}")
 
-def write_trajectory(trj_data, base_name, no_save=False, silent=False):
+def convert_orca(orca_file, mode, pltvib_path=None):
     """
-    Attempt to write trajectory to file unless no_save=True.
-    Returns: (filepath_or_None, in_memory_data_string)
-    silent: if True, suppress success/failure messages
+    Convert ORCA output to vibration trajectory string.
+    Returns: (frequencies, trajectory_xyz_string)
     """
-    if no_save:
-        if not silent:
-            print("Trajectory kept in memory only (--no-save flag active).")
-        return None, trj_data
-    
-    try:
-        with open(base_name, 'w') as f:
-            f.write(trj_data)
-        if not silent:
-            print(f"Written trajectory to: {base_name}")
-        return base_name, trj_data
-    except IOError as e:
-        if not silent:
-            print(f"Warning: Could not write to {base_name} ({e}). Keeping trajectory in memory only.")
-        return None, trj_data
-
-def convert_orca(orca_file, mode, pltvib_path=None, no_save=False, silent=False):
-    """Convert ORCA output to vibration trajectory; return (file_or_None, trj_string)"""
     if pltvib_path is None:
         pltvib_path = get_orca_pltvib_path()
     if not os.path.exists(orca_file):
         raise FileNotFoundError(f"ORCA output file {orca_file} does not exist.")
     
     basename = os.path.splitext(orca_file)[0]
-    # ...existing orca_mode logic...
+    
     # Determine orca_mode offset (5 or 6)
     with open(orca_file, 'r') as f:
         lines = f.readlines()
+    
     n_atoms = None
     for line in lines:
         if "Number of atoms" in line:
@@ -100,33 +75,36 @@ def convert_orca(orca_file, mode, pltvib_path=None, no_save=False, silent=False)
             break
     if n_atoms is None:
         raise ValueError("Could not determine number of atoms from ORCA output.")
+    
     orca_mode = int(mode) + (5 if n_atoms < 3 else 6)
-
-    # ...existing frequency block detection and tmp file handling...
+    
+    # Handle multiple frequency blocks
     freq_indices = [i for i, line in enumerate(lines) if "VIBRATIONAL FREQUENCIES" in line]
     if not freq_indices:
         raise ValueError("No vibrational frequencies section found in ORCA output.")
     
     coord_indices = [i for i, line in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in line]
+    
     if len(freq_indices) > 1:
         print(f"INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one.")
         idx = max(i for i in coord_indices if i < freq_indices[-1])
         tmp_file = f'{basename}.tmp'
         with open(tmp_file, 'w') as f:
             f.writelines(lines[idx:])
-        subprocess.run([pltvib_path, tmp_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run([pltvib_path, tmp_file, str(orca_mode)], 
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         os.remove(tmp_file)
         os.system(f'mv {basename}.tmp.v{orca_mode:03d}.xyz {basename}.out.v{orca_mode:03d}.xyz')
     else:
-        subprocess.run([pltvib_path, orca_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
+        subprocess.run([pltvib_path, orca_file, str(orca_mode)], 
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
     os.system(f'mv {basename}.out.v{orca_mode:03d}.xyz {basename}.out.v{mode:03d}.xyz')
     orca_vib = f'{basename}.out.v{mode:03d}.xyz'
-    xyz_vib = f'{basename}.v{mode:03d}.xyz'
-
+    
     if not os.path.exists(orca_vib):
         raise FileNotFoundError(f"File {orca_vib} not found. Ensure ORCA output is correct.")
-
+    
     with open(orca_vib, 'r') as f:
         lines = f.readlines()
     
@@ -141,40 +119,43 @@ def convert_orca(orca_file, mode, pltvib_path=None, no_save=False, silent=False)
             parts = line.split()
             trj_data += f"{parts[0]} {parts[1]} {parts[2]} {parts[3]}\n"
     
-    file_path, trj_str = write_trajectory(trj_data, xyz_vib, no_save=no_save, silent=silent)
     os.remove(orca_vib)
-    return file_path, trj_str
+    freqs = get_orca_frequencies(orca_file)
+    return freqs, trj_data
 
-def parse_cclib_output(output_file, mode, no_save=False, silent=False):
-    """Parse with cclib; return (freqs, file_or_None, trj_string)"""
+
+def parse_cclib_output(output_file, mode):
+    """
+    Parse QM output with cclib and generate trajectory.
+    Returns: (frequencies, trajectory_xyz_string)
+    """
     mode = int(mode)
-    amplitudes = [0.0, -0.2, -0.4, -0.6, -0.8, -1.0, -0.8, -0.6, -0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
-
+    amplitudes = [0.0, -0.2, -0.4, -0.6, -0.8, -1.0, -0.8, -0.6, -0.4, -0.2, 
+                  0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
+    
     try:
         parser = cclib.io.ccopen(output_file)
         if parser is None:
             raise ValueError(f"cclib could not parse {output_file}.")
     except Exception as e:
         raise ValueError(f"Error parsing {output_file} with cclib: {e}")
+    
     data = parser.parse()
-
+    
     if not hasattr(data, 'vibfreqs') or len(data.vibfreqs) == 0:
         raise ValueError("No vibrational frequencies found in file.")
-
+    
     freqs = data.vibfreqs
     num_modes = len(freqs)
     if mode < 0 or mode >= num_modes:
         raise ValueError(f"Mode index {mode} out of range. File has {num_modes} modes.")
-
+    
     atom_numbers = data.atomnos
     atom_symbols = [Atoms(numbers=[z]).get_chemical_symbols()[0] for z in atom_numbers]
     eq_coords = data.atomcoords[-1]
     displacement = np.array(data.vibdisps[mode])
     freq = freqs[mode]
-
-    base = os.path.splitext(output_file)[0]
-    out_xyz = f"{base}.v{mode:03d}.xyz"
-
+    
     trj_data = ""
     for amp in amplitudes:
         displaced = eq_coords + amp * displacement
@@ -182,11 +163,11 @@ def parse_cclib_output(output_file, mode, no_save=False, silent=False):
         trj_data += f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n"
         for sym, coord in zip(atom_symbols, displaced):
             trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
+    
+    return freqs, trj_data
 
-    file_path, trj_str = write_trajectory(trj_data, out_xyz, no_save=no_save, silent=silent)
-    return freqs, file_path, trj_str
 
-def parse_xyz_string_to_frames(trj_data_str):
+def parse_xyz_string_to_frames(trj_data_str: str) -> List[Atoms]:
     """
     Parse XYZ trajectory string into list of ASE Atoms objects.
     Returns list of frames.
@@ -214,4 +195,3 @@ def parse_xyz_string_to_frames(trj_data_str):
         frames.append(frame)
         i += 2 + num_atoms
     return frames
-

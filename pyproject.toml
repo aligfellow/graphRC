@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vib_analysis"
-version = "1.0.4"
+version = "1.1.0"
 description = "A package for analyzing internal coordinate changes from vibrational mode trajectories."
 authors = [{name = "Dr Alister Goodfellow"}]
 readme = "README.md"  
@@ -12,9 +12,12 @@ requires-python = ">=3.6"
 dependencies = [
     "numpy",
     "ase",
-    "cclib"
+    "cclib",
+    "rdkit", 
+    "networkx",
+    "xyzgraph"
 ]
-classifiers = [  # Add relevant classifiers
+classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -28,6 +31,3 @@ vib_analysis = "vib_analysis.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"vib_analysis.data" = ["*.json", "*.yaml"]

@@ -129,7 +129,5 @@ def main():
             raise
         sys.exit(1)
     
-    # Results are printed by run_analysis when print_output=True
-
 if __name__ == "__main__":
     main()

@@ -1,5 +1,8 @@
 """
 Lightweight vibrational graph comparison using xyzgraph.
+
+This module handles graph-based analysis of vibrational trajectories using
+xyzgraph for molecular graph construction and NetworkX for graph operations.
 Simplified to use distance-based detection and xyzgraph charge handling.
 """
 
@@ -9,6 +12,8 @@ from ase import Atoms
 from xyzgraph import build_graph, graph_to_ascii, DATA
 import networkx as nx
 import logging
+
+from . import config
 
 logger = logging.getLogger("vib_analysis")
 
@@ -40,14 +45,29 @@ def build_ts_graph(
     vib_bonds: List[Tuple[int, int]],
     vib_bond_info: Dict[Tuple[int, int], Tuple[float, float]],
     frames_displaced: List[Atoms],
-    distance_tolerance: float = 0.2,
+    distance_tolerance: float = config.DISTANCE_TOLERANCE,
     method: str = "cheminf",
     charge: int = 0,
     multiplicity: Optional[int] = None
 ) -> nx.Graph:
     """
     Build transition-state reference graph using xyzgraph.
-    Bond formation/breaking decided from direct distance changes (no VDW ratios).
+    
+    Bond formation/breaking decided from direct distance changes between
+    TS and displaced frames.
+    
+    Args:
+        frame_ts: Transition state frame
+        vib_bonds: List of bond tuples with significant changes
+        vib_bond_info: Dict mapping bonds to (change, initial_length)
+        frames_displaced: List of displaced frames (typically 2)
+        distance_tolerance: Tolerance for bond formation/breaking (Å)
+        method: Graph building method ('cheminf' or 'xtb')
+        charge: Molecular charge
+        multiplicity: Spin multiplicity (auto-detected if None)
+        
+    Returns:
+        NetworkX graph of transition state with bond annotations
     """
     atoms_xyz = _atoms_to_xyz_format(frame_ts)
     bonds_to_add, bonds_to_remove = [], []
@@ -157,7 +177,21 @@ def build_displaced_graphs(
 # =====================================================================================
 
 def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
-    """Compare two xyzgraph graphs for bond and charge differences."""
+    """
+    Compare two xyzgraph graphs for bond and charge differences.
+    
+    Args:
+        g1: First molecular graph
+        g2: Second molecular graph
+        
+    Returns:
+        Dictionary containing:
+            - bonds_formed: Bonds present in g2 but not g1
+            - bonds_broken: Bonds present in g1 but not g2
+            - bonds_common: Bonds present in both graphs
+            - bond_order_changes: Bond order changes for common bonds
+            - charge_redistribution: Formal charge changes per atom
+    """
     edges1, edges2 = set(g1.edges()), set(g2.edges())
 
     bonds_formed = list(edges2 - edges1)
@@ -178,7 +212,7 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
         q1 = g1.nodes[n].get("formal_charge", 0)
         q2 = g2.nodes[n].get("formal_charge", 0)
         dq = q2 - q1
-        if abs(dq) > 1e-6:
+        if abs(dq) > config.BOND_ORDER_EPSILON:
             charge_deltas[n] = dq
 
     return {
@@ -188,29 +222,6 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
         "bond_order_changes": bond_order_changes,
         "charge_redistribution": charge_deltas,
     }
-
-def extract_reactive_subgraph(graph: nx.Graph, comparison: Dict[str, Any], shells: int = 1) -> nx.Graph:
-    """
-    Extract subgraph centered on atoms involved in bond changes only.
-    Expands neighborhood by N shells for ASCII visualization.
-    """
-    active_nodes = set()
-    # Only use bond changes, not charge redistribution
-    for (i, j) in comparison["bonds_formed"] + comparison["bonds_broken"]:
-        active_nodes.update([i, j])
-    
-    # Also include bond order changes
-    for (i, j) in comparison.get("bond_order_changes", {}).keys():
-        active_nodes.update([i, j])
-
-    # Expand by N shells
-    for _ in range(shells):
-        neighbors = set()
-        for n in active_nodes:
-            neighbors.update(graph.neighbors(n))
-        active_nodes.update(neighbors)
-
-    return graph.subgraph(sorted(active_nodes)).copy()
 
 
 # =====================================================================================
@@ -307,91 +318,3 @@ def generate_ascii_summary(graph_ts: nx.Graph, graph_1: nx.Graph, graph_2: nx.Gr
         logger.warning(f"ASCII generation failed: {e}")
         ascii_ts = ascii_1 = ascii_2 = "<ascii_error>"
     return {"ascii_ts": ascii_ts, "ascii_ref": ascii_1, "ascii_disp": ascii_2}
-
-# =====================================================================================
-# === PRINT / CLI OUTPUT HELPERS ===
-# =====================================================================================
-
-def interpret_bond_order(order: float) -> str:
-    """Convert numeric bond order to readable string."""
-    if abs(order - 1.0) < 0.1:
-        return "single"
-    elif abs(order - 1.5) < 0.1:
-        return "aromatic"
-    elif abs(order - 2.0) < 0.1:
-        return "double"
-    elif abs(order - 3.0) < 0.1:
-        return "triple"
-    else:
-        return f"{order:.1f}"
-
-
-def print_graph_analysis(results: Dict[str, Any],
-                         atom_index_map: Optional[Dict[int, str]] = None,
-                         debug: bool = False):
-    """Pretty-print lightweight graph comparison summary with optional ASCII output."""
-    comp = results["comparison"]
-    g_ts = results["ts_graph"]
-    g1 = results["frame1_graph"]
-    g2 = results["frame2_graph"]
-
-    print("\n" + "=" * 80)
-    print(" "*25 + "VIBRATIONAL GRAPH ANALYSIS SUMMARY")
-    print("=" * 80)
-
-    # Bond formation / breaking
-    formed = comp.get("bonds_formed", [])
-    broken = comp.get("bonds_broken", [])
-    bond_order_changes = comp.get("bond_order_changes", {})
-    charge_shift = comp.get("charge_redistribution", {})
-
-    if formed:
-        print(f"\nBonds Formed ({len(formed)}):")
-        for (i, j) in formed:
-            s1 = g2.nodes[i].get("symbol", "?")
-            s2 = g2.nodes[j].get("symbol", "?")
-            order2 = g2[i][j].get('bond_order', 1)
-            order_str = interpret_bond_order(order2)
-            print(f"  Bond ({i}, {j}) [{s1}-{s2}]: formed as {order_str} (order={order2:.1f})")
-
-    if broken:
-        print(f"\nBonds Broken ({len(broken)}):")
-        for (i, j) in broken:
-            s1 = g1.nodes[i].get("symbol", "?")
-            s2 = g1.nodes[j].get("symbol", "?")
-            order1 = g1[i][j].get('bond_order', 1)
-            order_str = interpret_bond_order(order1)
-            print(f"  Bond ({i}, {j}) [{s1}-{s2}]: broken from {order_str} (order={order1:.1f})")
-
-    if bond_order_changes:
-        print(f"\nBond Order Changes ({len(bond_order_changes)} bonds):")
-        for (i, j), (order1, order2) in bond_order_changes.items():
-            s1 = g1.nodes[i].get("symbol", "?")
-            s2 = g1.nodes[j].get("symbol", "?")
-            order1_str = interpret_bond_order(order1)
-            order2_str = interpret_bond_order(order2)
-            print(f"  Bond ({i}, {j}) [{s1}-{s2}]: {order1_str}→{order2_str} (order {order1:.1f}→{order2:.1f})")
-
-    if charge_shift:
-        print(f"\nFormal Charge Redistribution ({len(charge_shift)} atoms):")
-        for i, dq in charge_shift.items():
-            sym = g1.nodes[i].get("symbol", "?")
-            q1 = g1.nodes[i].get("formal_charge", 0)
-            q2 = g2.nodes[i].get("formal_charge", 0)
-            print(f"  Atom {i} [{sym}]: charge {q1:+.0f}→{q2:+.0f} (Δq = {dq:+.2f})")
-
-    # ASCII visualization (if generated)
-    if "ascii_ts" in results:
-        print("\n" + "="*80)
-        print("ASCII REPRESENTATIONS")
-        print("="*80)
-        print("\nTransition State (TS):\n")
-        print(results["ascii_ts"])
-        print("\nFrame 1:\n")
-        print(results.get("ascii_ref", "<no ascii_ref>"))
-        print("\nFrame 2:\n")
-        print(results.get("ascii_disp", "<no ascii_disp>"))
-    elif debug:
-        print("\nNo ASCII data available. Run with -d or ensure generate_ascii_summary() is called.")
-
-    print("=" * 80)

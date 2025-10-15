@@ -1,8 +1,17 @@
+"""
+High-level API for vibrational trajectory analysis.
+
+This module provides the main entry points for running complete analyses,
+including trajectory loading, internal coordinate analysis, and optional
+graph-based analysis.
+"""
+
 import os
 import logging
 from typing import List, Optional, Dict, Any
 from ase import Atoms
 
+from . import config
 from .core import analyze_internal_displacements, read_xyz_trajectory
 from .convert import (
     parse_cclib_output, 
@@ -11,7 +20,7 @@ from .convert import (
     parse_xyz_string_to_frames
 )
 from .graph_compare import analyze_displacement_graphs
-from .utils import write_trajectory_file, save_displacement_pair
+from .utils import write_trajectory_file, save_displacement_pair, setup_logging
 
 logger = logging.getLogger("vib_analysis")
 
@@ -97,28 +106,30 @@ def load_trajectory(
 def run_analysis(
     input_file: str,
     mode: int = 0,
-    ts_frame: int = 0,
+    ts_frame: int = config.DEFAULT_TS_FRAME,
     # Vibrational analysis parameters
-    bond_tolerance: float = 1.4,
-    angle_tolerance: float = 1.1,
-    dihedral_tolerance: float = 1.0,
-    bond_threshold: float = 0.4,
-    angle_threshold: float = 10.0,
-    dihedral_threshold: float = 20.0,
+    bond_tolerance: float = config.BOND_TOLERANCE,
+    angle_tolerance: float = config.ANGLE_TOLERANCE,
+    dihedral_tolerance: float = config.DIHEDRAL_TOLERANCE,
+    bond_threshold: float = config.BOND_THRESHOLD,
+    angle_threshold: float = config.ANGLE_THRESHOLD,
+    dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
+    bond_stability_threshold: float = config.BOND_STABILITY_THRESHOLD,
     # Graph analysis parameters
     enable_graph: bool = False,
     graph_method: str = "cheminf",
     charge: int = 0,
     multiplicity: Optional[int] = None,
-    distance_tolerance: float = 0.2,
-    ascii_scale: float = 2.5,
-    ascii_include_h: bool = False,
-    ascii_neighbor_shells: int = 1,
+    distance_tolerance: float = config.DISTANCE_TOLERANCE,
+    ascii_scale: float = config.ASCII_SCALE,
+    ascii_include_h: bool = config.ASCII_INCLUDE_H,
+    ascii_neighbor_shells: int = config.ASCII_NEIGHBOR_SHELLS,
     # Output options
-    save_trajectory: bool = True,
-    save_displacement: bool = False,
-    displacement_level: int = 1,
+    save_trajectory: bool = config.SAVE_TRAJECTORY_DEFAULT,
+    save_displacement: bool = config.SAVE_DISPLACEMENT_DEFAULT,
+    displacement_level: int = config.DEFAULT_DISPLACEMENT_LEVEL,
     orca_pltvib_path: Optional[str] = None,
+    print_output: bool = False,
     verbose: bool = False,
     debug: bool = False,
 ) -> Dict[str, Any]:
@@ -136,6 +147,7 @@ def run_analysis(
         bond_threshold: Threshold for significant bond changes (Å)
         angle_threshold: Threshold for significant angle changes (degrees)
         dihedral_threshold: Threshold for significant dihedral changes (degrees)
+        bond_stability_threshold: Threshold for filtering coupled angle/dihedral changes (Å)
         
         enable_graph: Enable graph-based analysis
         graph_method: Method for graph building ('cheminf' or 'xtb')
@@ -150,6 +162,7 @@ def run_analysis(
         save_displacement: Save displaced structure pair
         displacement_level: Displacement amplitude level (1-4)
         orca_pltvib_path: Path to orca_pltvib executable
+        print_output: Print formatted analysis results to console
         verbose: Print status messages
         debug: Enable debug output
         
@@ -160,8 +173,15 @@ def run_analysis(
             - 'graph': Graph analysis results (if enabled)
             - 'displacement_files': Paths to saved displacement files (if enabled)
     """
-    if verbose or debug:
-        logger.setLevel(logging.DEBUG if debug else logging.INFO)
+    # Set up logging and print header if outputting to console
+    if print_output or verbose or debug:
+        # Print main header first
+        print("=" * 80)
+        print(" " * 30 + "VIB_ANALYSIS")
+        print("=" * 80)
+        
+        # Set up logging (prints debug message if debug mode)
+        setup_logging(verbose=verbose, debug=debug)
     
     # Load trajectory
     trajectory_data = load_trajectory(
@@ -187,6 +207,7 @@ def run_analysis(
         bond_threshold=bond_threshold,
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,
+        bond_stability_threshold=bond_stability_threshold,
     )
     
     # Graph analysis (optional)
@@ -220,12 +241,24 @@ def run_analysis(
             ts_frame=ts_frame,
             output_prefix=output_prefix,
             level=displacement_level,
+            max_level=config.MAX_DISPLACEMENT_LEVEL,
             verbose=verbose,
         )
     
-    return {
+    results_dict = {
         'trajectory': trajectory_data,
         'vibrational': vib_results,
         'graph': graph_results,
         'displacement_files': displacement_files,
     }
+    
+    # Print formatted output if requested
+    if print_output:
+        from .output import print_analysis_results
+        print_analysis_results(
+            results_dict,
+            show_all=debug,  # Show all details if debug mode
+            mode=mode
+        )
+    
+    return results_dict

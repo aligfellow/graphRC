@@ -7,7 +7,7 @@ import itertools
 import re
 
 try:
-    from xyzgraph import build_graph, graph_to_ascii, VDW as XYZ_VDW
+    from xyzgraph import build_graph, graph_to_ascii, DATA, graph_debug_report
 except ImportError:
     raise ImportError("xyzgraph library required. Install with: pip install xyzgraph")
 
@@ -15,14 +15,69 @@ import logging
 logger = logging.getLogger('vib_analysis')
 
 
+# ===================== NEW XYZGRAPH HELPERS =====================
+
+def _atoms_to_xyz_format(frame: Atoms) -> List[Tuple[str, Tuple[float, float, float]]]:
+    """Convert ASE Atoms object to xyzgraph format: [(symbol, (x, y, z)), ...]"""
+    return [(frame[i].symbol, tuple(frame[i].position)) for i in range(len(frame))]
+
+def _determine_bonds_to_add_remove(ts_frame: Atoms,
+                                   displaced_frame: Atoms,
+                                   vib_bonds: List[Tuple[int, int]],
+                                   vib_bond_info: Dict[Tuple[int, int], Tuple[float, float]],
+                                   bond_threshold: float = 0.6,
+                                   unbond_threshold: float = 0.4) -> Tuple[List[Tuple[int, int]], List[Tuple[int, int]]]:
+    """
+    Determine which bonds to add/remove in displaced geometry based on:
+    - Vibrational bond information
+    - Distance-based criteria compared to TS geometry
+
+    Returns:
+        bonds_to_add: List of (i,j) pairs to add
+        bonds_to_remove: List of (i,j) pairs to remove
+    """
+    bonds_to_add = []
+    bonds_to_remove = []
+
+    for i, j in vib_bonds:
+        if i >= len(displaced_frame) or j >= len(displaced_frame):
+            continue
+
+        # Get distances in both frames
+        ts_dist = ts_frame.get_distance(i, j)
+        disp_dist = displaced_frame.get_distance(i, j)
+
+        # Get vibrational delta information
+        delta, _ = vib_bond_info.get((i, j), vib_bond_info.get((j, i), (0.0, 0.0)))
+
+        # Calculate VDW ratios
+        sym_i, sym_j = ts_frame[i].symbol, ts_frame[j].symbol
+        vdw_sum = DATA.vdw.get(sym_i, 2.0) + DATA.vdw.get(sym_j, 2.0)
+        ts_ratio = ts_dist / vdw_sum if vdw_sum > 1e-6 else 2.0
+        disp_ratio = disp_dist / vdw_sum if vdw_sum > 1e-6 else 2.0
+
+        # Determine bond threshold based on element types
+        threshold = _bond_threshold(sym_i, sym_j)
+
+        # Logic for bond addition/removal
+        if ts_ratio > threshold and disp_ratio <= threshold:
+            # Bond forms in displaced geometry
+            bonds_to_add.append((i, j))
+        elif ts_ratio <= threshold and disp_ratio > threshold:
+            # Bond breaks in displaced geometry
+            bonds_to_remove.append((i, j))
+
+    return bonds_to_add, bonds_to_remove
+
+
 # ===================== SIMPLE GEOMETRY UTILITIES =====================
 
 def _vdw_radius(sym: str) -> float:
-    return XYZ_VDW.get(sym, 2.0)
+    return DATA.vdw.get(sym, 2.0)
 
 def _vdw_ratio(frame: Atoms, i: int, j: int, vdw: Dict[str,float]) -> Tuple[float,float,float]:
     dist = frame.get_distance(i, j)
-    r_sum = vdw.get(frame[i].symbol, 2.0) + vdw.get(frame[j].symbol, 2.0)
+    r_sum = DATA.vdw.get(frame[i].symbol, 2.0) + DATA.vdw.get(frame[j].symbol, 2.0)
     ratio = dist / r_sum if r_sum > 1e-6 else 2.0
     return ratio, dist, r_sum
 
@@ -346,7 +401,31 @@ def build_ts_reference_graph(frame_ts: Atoms,
                              allow_shortcuts: bool = False,
                              avoid_small_cycles: bool = True) -> nx.Graph:
     logger.debug(f"TS: building base graph (scoring={enable_scoring})")
-    g = build_graph(frame_ts, method=method, charge=charge, multiplicity=multiplicity)
+
+    # Convert ASE Atoms to new xyzgraph format
+    atoms_xyz = _atoms_to_xyz_format(frame_ts)
+
+    # Use new build_graph format with bond/unbond parameters if we have vib information
+    bonds_to_add = []
+    bonds_to_remove = []
+
+    if vib_bonds and frames_displaced:
+        # Determine which bonds to add/remove based on displaced geometries
+        for disp_frame in frames_displaced:
+            add_bonds, remove_bonds = _determine_bonds_to_add_remove(
+                frame_ts, disp_frame, vib_bonds, vib_bond_info
+            )
+            bonds_to_add.extend(add_bonds)
+            bonds_to_remove.extend(remove_bonds)
+
+    # Remove duplicates and sort
+    bonds_to_add = sorted(list(set(bonds_to_add)))
+    bonds_to_remove = sorted(list(set(bonds_to_remove)))
+
+    g = build_graph(atoms_xyz, method=method, charge=charge, multiplicity=multiplicity,
+                    bond=bonds_to_add, unbond=bonds_to_remove)
+
+    # Ensure node symbols are correct
     for i in range(len(frame_ts)):
         if i in g.nodes and g.nodes[i].get('symbol') != frame_ts[i].symbol:
             g.nodes[i]['symbol'] = frame_ts[i].symbol
@@ -429,98 +508,37 @@ def build_ts_reference_graph(frame_ts: Atoms,
 # ===================== REVISED DISPLACED BUILDER =====================
 
 def build_displaced_graph(frame: Atoms,
-                         ts_graph: nx.Graph,
                          vib_bonds: List[Tuple[int,int]],
                          vib_bond_info: Dict[Tuple[int,int], Tuple[float, float]],
                          frame_label: str,
                          method: str = 'cheminf',
                          charge: int = 0,
                          multiplicity: Optional[int] = None,
-                         debug_ascii: bool = False,
-                         use_ts_template: bool = False,
-                         strategy: str = 'template',
-                         removal_margin: float = 0.12,
-                         keep_slack: float = 0.08,
-                         recovery_rank: int = 2) -> nx.Graph:
+                         debug_ascii: bool = False) -> nx.Graph:
     """
-    Hysteretic pruning:
-      keep if ratio <= thr + keep_slack
-      remove if ratio > thr + removal_margin
-      borderline (thr+keep_slack < ratio <= thr+removal_margin) retained & tagged vib_borderline=True
-
-    After both displaced graphs are built (handled in analysis), recovery may re-add top-N delta vib bonds
-    that were removed in BOTH frames (see recovery in analyze_displacement_graphs).
+    Build displaced geometry graph using xyzgraph.
+    Just build the graph and let xyzgraph handle all bonding decisions.
     """
-    g = ts_graph.copy()
-    if not vib_bonds:
-        return g
+    # Convert ASE Atoms to new xyzgraph format
+    atoms_xyz = _atoms_to_xyz_format(frame)
 
-    vdw = {frame[k].symbol: _vdw_radius(frame[k].symbol) for k in range(len(frame))}
-    vib_edges_ts = {
-        (min(i, j), max(i, j))
-        for i, j, d in ts_graph.edges(data=True)
-        if d.get('vib_identified', False)
-    }
+    # Build graph using xyzgraph - let it handle all chemistry
+    g = build_graph(atoms_xyz, method=method, charge=charge, multiplicity=multiplicity)
 
-    removed = 0
-    retained = 0
-    borderline = 0
+    # Ensure node symbols are correct
+    for i in range(len(frame)):
+        if i in g.nodes and g.nodes[i].get('symbol') != frame[i].symbol:
+            g.nodes[i]['symbol'] = frame[i].symbol
 
-    for (i, j) in list(g.edges()):
-        key = (min(i, j), max(i, j))
-        if key not in vib_edges_ts:
-            continue  # only prune TS vib bonds
-        # Geometry in displaced frame
-        if i >= len(frame) or j >= len(frame):
-            continue
-        ratio, dist, _ = _vdw_ratio(frame, i, j, vdw)
-        thr = _bond_threshold(frame[i].symbol, frame[j].symbol)
-        upper_keep = thr + keep_slack
-        upper_remove = thr + removal_margin
-        decision = None
-        if ratio <= upper_keep:
-            decision = "keep"
-        elif ratio > upper_remove:
-            g.remove_edge(i, j)
-            removed += 1
-            decision = "remove"
-        else:
-            # borderline keep
-            if 'distance' in g[i][j]:
-                g[i][j]['distance'] = dist
-            else:
-                g.add_edge(i, j, distance=dist)
-            g[i][j]['vib_retained'] = True
-            g[i][j]['vib_borderline'] = True
-            g[i][j]['vib_retained_ratio'] = ratio
-            g[i][j]['vib_threshold'] = thr
-            g[i][j]['vib_prune_reason'] = f"borderline thr={thr:.3f} ratio={ratio:.3f}"
-            borderline += 1
-            retained += 1
-            continue
-        if decision == "keep":
-            if 'distance' in g[i][j]:
-                g[i][j]['distance'] = dist
-            g[i][j]['vib_retained'] = True
-            g[i][j]['vib_retained_ratio'] = ratio
-            g[i][j]['vib_threshold'] = thr
-            g[i][j]['vib_prune_reason'] = f"kept ratio={ratio:.3f}<=thr+{keep_slack:.2f}"
-            retained += 1
-        elif decision == "remove":
-            logger.debug(f"{frame_label}: remove vib {i}-{j} ratio={ratio:.3f} thr={thr:.3f} (>{thr+removal_margin:.3f})")
+    # Mark vibrational bonds for tracking
+    for i, j in vib_bonds:
+        if g.has_edge(i, j):
+            delta, _ = vib_bond_info.get((i, j), vib_bond_info.get((j, i), (0.0, 0.0)))
+            g[i][j]['vib_identified'] = True
+            g[i][j]['vib_delta'] = delta
+            g[i][j]['displaced_bond'] = True
 
-    g.graph['vib_retained_count'] = retained
-    g.graph['vib_removed_count'] = removed
-    g.graph['vib_borderline_count'] = borderline
-    logger.debug(f"{frame_label}: vib bonds retained={retained} (borderline={borderline}), removed={removed}")
-
-    if debug_ascii and vib_edges_ts:
-        try:
-            focus_atoms = sorted({a for pair in vib_edges_ts for a in pair})
-            expanded = _expand_with_neighbors(g, focus_atoms, depth=1)
-            sub = g.subgraph(expanded).copy()
-        except Exception as e:
-            logger.warning(f"{frame_label}: ASCII debug failed: {e}")
+    logger.debug(f"{frame_label}: built graph with {g.number_of_edges()} bonds, {g.number_of_nodes()} atoms")
 
     return g
 
@@ -528,7 +546,7 @@ def build_displaced_graph(frame: Atoms,
 def _enforce_static_vib_bond_prune(ts_graph: nx.Graph,
                                    g1: nx.Graph,
                                    g2: nx.Graph,
-                                   variation_min: float = 0.06) -> Dict[str,int]:
+                                   variation_min: float = 0.05) -> Dict[str,int]:
     """
     Remove TS vib bonds from displaced graphs if the vibrational mode does NOT
     modulate them (ratio span below variation_min). Focuses on relative change,
@@ -613,8 +631,7 @@ def _recover_removed_vib_bonds(ts_graph: nx.Graph,
                           vib_retained=True,
                           vib_retained_ratio=rr,
                           vib_threshold=thr,
-                          vib_prune_reason="recovered_absent_both",
-                          TS=True)  # keep TS tag for recovered vib TS bond
+                          vib_prune_reason="recovered_absent_both")
         recovered.append(((i, j), label, rr, thr))
     if recovered:
         for (bond, label, rr, thr) in recovered:
@@ -701,18 +718,16 @@ def analyze_displacement_graphs(frames: List[Atoms],
 
     _annotate_vib_bond_states(g_ts, frames, ts_idx, [f1_idx, f2_idx], vib_bonds)
 
-    g1 = build_displaced_graph(frame1, g_ts, vib_bonds, vib_bond_info,
+    g1 = build_displaced_graph(frame1, vib_bonds, vib_bond_info,
                                frame_label=f"frame{f1_idx}",
                                method=method, charge=charge,
                                multiplicity=multiplicity,
-                               debug_ascii=debug,
-                               strategy='template')
-    g2 = build_displaced_graph(frame2, g_ts, vib_bonds, vib_bond_info,
+                               debug_ascii=debug)
+    g2 = build_displaced_graph(frame2, vib_bonds, vib_bond_info,
                                frame_label=f"frame{f2_idx}",
                                method=method, charge=charge,
                                multiplicity=multiplicity,
-                               debug_ascii=debug,
-                               strategy='template')
+                               debug_ascii=debug)
 
     # NEW: enforce removal of static vib bonds
     enforce_stats = _enforce_static_vib_bond_prune(g_ts, g1, g2, variation_min=0.06)

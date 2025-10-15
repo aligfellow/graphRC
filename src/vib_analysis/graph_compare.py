@@ -231,6 +231,7 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
 def analyze_displacement_graphs(
         frames: List[Atoms],
         internal_changes: Dict[str, Any],
+        atoms_of_interest: Optional[List[int]] = None,
         method: str = "cheminf",
         charge: int = 0,
         multiplicity: Optional[int] = None,
@@ -240,7 +241,14 @@ def analyze_displacement_graphs(
         ascii_include_h: bool = True,
         debug: bool = False
     ) -> Dict[str, Any]:
-    """Full lightweight analysis: build TS + displaced graphs, classify bond and charge changes."""
+    """
+    Full lightweight analysis: build TS + displaced graphs, classify bond and charge changes.
+    
+    Args:
+        atoms_of_interest: Optional list of atom indices to highlight (for rotations/inversions).
+                          If provided, these atoms will be used as the core for ASCII visualization
+                          instead of reactive_atoms from bond changes.
+    """
     ts_idx = internal_changes.get("ts_frame", 0)
     f1_idx, f2_idx = internal_changes["frame_indices"]
     vib_bond_info = internal_changes["bond_changes"]
@@ -259,9 +267,22 @@ def analyze_displacement_graphs(
 
     comparison = compare_graphs(g1, g2)
 
-    reactive_atoms = set()
-    for (i, j) in vib_bonds:
-        reactive_atoms.update([i, j])
+    # Use atoms_of_interest if provided (for rotations/inversions),
+    # otherwise use reactive_atoms from bond changes
+    is_rotation_or_inversion = False
+    if atoms_of_interest:
+        reactive_atoms = set(atoms_of_interest)
+        is_rotation_or_inversion = True
+        
+        # Mark edges between atoms_of_interest with "TS" property for highlighting
+        for i in atoms_of_interest:
+            for j in atoms_of_interest:
+                if i < j and g_ts.has_edge(i, j):
+                    g_ts[i][j]["TS"] = True
+    else:
+        reactive_atoms = set()
+        for (i, j) in vib_bonds:
+            reactive_atoms.update([i, j])
 
     # Expand by N shells (use union of neighbors from all graphs to stay consistent)
     for _ in range(ascii_neighbor_shells):
@@ -281,7 +302,13 @@ def analyze_displacement_graphs(
     sub_2 = g2.subgraph(sorted(reactive_atoms & set(g2.nodes))).copy()
 
     # Use subgraphs for ASCII visualization
-    ascii_data = generate_ascii_summary(sub_ts, sub_1, sub_2, scale=ascii_scale, include_h=ascii_include_h)
+    # For rotations/inversions, only show TS (bonding doesn't change)
+    ascii_data = generate_ascii_summary(
+        sub_ts, sub_1, sub_2, 
+        scale=ascii_scale, 
+        include_h=ascii_include_h,
+        only_ts=is_rotation_or_inversion
+    )
     
     results = {
         "ts_graph": g_ts,
@@ -308,13 +335,28 @@ def analyze_displacement_graphs(
 # =====================================================================================
 
 def generate_ascii_summary(graph_ts: nx.Graph, graph_1: nx.Graph, graph_2: nx.Graph,
-                           scale: float = 3.0, include_h: bool = True) -> Dict[str, str]:
-    """Generate ASCII visualization for quick debugging."""
+                           scale: float = 3.0, include_h: bool = True, 
+                           only_ts: bool = False) -> Dict[str, str]:
+    """
+    Generate ASCII visualization for quick debugging.
+    
+    Args:
+        only_ts: If True, only generate TS ASCII (for rotations/inversions where bonding doesn't change)
+    """
     try:
         ascii_ts = graph_to_ascii(graph_ts, scale=scale, include_h=include_h)
-        ascii_1 = graph_to_ascii(graph_1, scale=scale, include_h=include_h, reference=graph_ts)
-        ascii_2 = graph_to_ascii(graph_2, scale=scale, include_h=include_h, reference=graph_ts)
+        
+        if only_ts:
+            # For rotations/inversions, skip Frame 1/2 (bonding is same)
+            return {"ascii_ts": ascii_ts}
+        else:
+            # For bond changes, show all three
+            ascii_1 = graph_to_ascii(graph_1, scale=scale, include_h=include_h, reference=graph_ts)
+            ascii_2 = graph_to_ascii(graph_2, scale=scale, include_h=include_h, reference=graph_ts)
+            return {"ascii_ts": ascii_ts, "ascii_ref": ascii_1, "ascii_disp": ascii_2}
     except Exception as e:
         logger.warning(f"ASCII generation failed: {e}")
-        ascii_ts = ascii_1 = ascii_2 = "<ascii_error>"
-    return {"ascii_ts": ascii_ts, "ascii_ref": ascii_1, "ascii_disp": ascii_2}
+        if only_ts:
+            return {"ascii_ts": "<ascii_error>"}
+        else:
+            return {"ascii_ts": "<ascii_error>", "ascii_ref": "<ascii_error>", "ascii_disp": "<ascii_error>"}

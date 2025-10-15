@@ -45,10 +45,10 @@ def main():
     vib_group.add_argument('--all', '-a', action='store_true',
                           help='Report all changes including minor ones')
     
-    # Graph analysis
+    # Graph analysis (includes mode characterization)
     graph_group = parser.add_argument_group('graph analysis parameters')
     graph_group.add_argument('--graph', '-g', action='store_true',
-                            help='Enable graph-based analysis')
+                            help='Enable graph-based analysis and mode characterization (rotations, inversions, aromatic systems)')
     graph_group.add_argument('--method', default='cheminf',
                             choices=['cheminf', 'xtb'],
                             help='Graph building method (default: cheminf)')
@@ -103,7 +103,7 @@ def main():
             angle_threshold=args.angle_threshold,
             dihedral_threshold=args.dihedral_threshold,
             bond_stability_threshold=args.bond_stability,
-            # Graph parameters
+            # Graph parameters (includes mode characterization)
             enable_graph=args.graph,
             graph_method=args.method,
             charge=args.charge,

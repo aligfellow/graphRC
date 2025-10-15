@@ -21,6 +21,7 @@ from .convert import (
 )
 from .graph_compare import analyze_displacement_graphs
 from .utils import write_trajectory_file, save_displacement_pair, setup_logging
+from .characterize import characterize_vib_mode
 
 logger = logging.getLogger("vib_analysis")
 
@@ -115,7 +116,7 @@ def run_vib_analysis(
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
     bond_stability_threshold: float = config.BOND_STABILITY_THRESHOLD,
-    # Graph analysis parameters
+    # Graph analysis parameters (includes mode characterization)
     enable_graph: bool = False,
     graph_method: str = "cheminf",
     charge: int = 0,
@@ -149,6 +150,8 @@ def run_vib_analysis(
         dihedral_threshold: Threshold for significant dihedral changes (degrees)
         bond_stability_threshold: Threshold for filtering coupled angle/dihedral changes (Å)
         
+        enable_characterization: Enable mode characterization (rotations, inversions)
+
         enable_graph: Enable graph-based analysis
         graph_method: Method for graph building ('cheminf' or 'xtb')
         charge: Molecular charge for graph building
@@ -170,6 +173,7 @@ def run_vib_analysis(
         Dictionary with keys:
             - 'trajectory': Trajectory metadata (frames, frequencies, file path)
             - 'vibrational': Internal coordinate analysis results
+            - 'characterization': Mode characterization (if enabled)
             - 'graph': Graph analysis results (if enabled)
             - 'displacement_files': Paths to saved displacement files (if enabled)
     """
@@ -210,11 +214,93 @@ def run_vib_analysis(
         bond_stability_threshold=bond_stability_threshold,
     )
     
-    # Graph analysis (optional)
+    # Check if anything was detected - if not, try with relaxed thresholds
+    nothing_detected = (
+        len(vib_results['bond_changes']) == 0 and
+        len(vib_results['angle_changes']) == 0 and
+        len(vib_results['dihedral_changes']) == 0
+    )
+    
+    if nothing_detected:
+        if print_output:
+            print("\nNo significant changes detected with standard thresholds.")
+            print("Relaxing criteria (50% thresholds)...")
+        
+        logger.info("No changes detected, retrying with 50% thresholds")
+        
+        # Retry with 50% thresholds
+        vib_results = analyze_internal_displacements(
+            frames,
+            ts_frame=ts_frame,
+            bond_tolerance=bond_tolerance,
+            angle_tolerance=angle_tolerance,
+            dihedral_tolerance=dihedral_tolerance,
+            bond_threshold=bond_threshold * 0.5,
+            angle_threshold=angle_threshold * 0.5,
+            dihedral_threshold=dihedral_threshold * 0.5,
+            bond_stability_threshold=bond_stability_threshold * 0.5,
+        )
+        
+        # Add metadata about relaxed thresholds
+        vib_results['thresholds_relaxed'] = True
+        vib_results['threshold_factor'] = 0.5
+        
+        if print_output:
+            still_nothing = (
+                len(vib_results['bond_changes']) == 0 and
+                len(vib_results['angle_changes']) == 0 and
+                len(vib_results['dihedral_changes']) == 0
+            )
+            if still_nothing:
+                print("Still no significant changes detected (very small displacements).")
+            else:
+                print(f"Found changes with relaxed thresholds.")
+    else:
+        vib_results['thresholds_relaxed'] = False
+    
+    # Characterize mode type and run graph analysis (both enabled with --graph)
+    characterization = None
     graph_results = None
+    
     if enable_graph:
         if print_output:
+            print("Characterizing vibrational mode...")
+        
+        characterization = characterize_vib_mode(
+            internal_changes=vib_results,
+            frames=frames,
+            ts_frame_idx=ts_frame
+        )
+        
+        logger.debug(
+            f"Mode characterized as: {characterization['mode_type']} "
+            f"({characterization['description']})"
+        )
+        if print_output:
             print("Running graph-based analysis...")
+        
+        # Extract atoms of interest from characterization for ASCII highlighting
+        atoms_of_interest = set()
+        if characterization:
+            mode_type = characterization.get('mode_type')
+            if mode_type == 'rotation':
+                # For rotations: highlight the rotating bond (j, k from dihedrals)
+                for rot_info in characterization.get('rotations', {}).values():
+                    j, k = rot_info['axis_atoms']
+                    atoms_of_interest.update([j, k])
+            elif mode_type == 'inversion':
+                # For inversions: highlight hub atom and all its neighbors
+                inv_info = characterization.get('inversion')
+                if inv_info:
+                    hub_atom = inv_info['center_atom']
+                    atoms_of_interest.add(hub_atom)
+                    # Add neighbors from TS frame
+                    from ase.neighborlist import NeighborList, natural_cutoffs
+                    cutoffs = natural_cutoffs(frames[ts_frame], mult=1.2)
+                    nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
+                    nl.update(frames[ts_frame])
+                    neighbors, _ = nl.get_neighbors(hub_atom)
+                    atoms_of_interest.update(neighbors)
         
         # Add ts_frame to internal_changes for graph analysis
         vib_results_with_ts = {**vib_results, 'ts_frame': ts_frame}
@@ -222,6 +308,7 @@ def run_vib_analysis(
         graph_results = analyze_displacement_graphs(
             frames=frames,
             internal_changes=vib_results_with_ts,
+            atoms_of_interest=list(atoms_of_interest) if atoms_of_interest else None,
             method=graph_method,
             charge=charge,
             multiplicity=multiplicity,
@@ -248,13 +335,14 @@ def run_vib_analysis(
     results_dict = {
         'trajectory': trajectory_data,
         'vibrational': vib_results,
+        'characterization': characterization,
         'graph': graph_results,
         'displacement_files': displacement_files,
     }
     
     # Print formatted output if requested
     if print_output:
-        from .output import print_analysis_results
+        from .output import print_analysis_results 
         print_analysis_results(
             results_dict,
             show_all=show_all or debug,  # Show all if requested or in debug mode

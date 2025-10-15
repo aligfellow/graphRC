@@ -5,7 +5,6 @@
 Identify bond formation/breaking, angle changes, and dihedral rotations from vibrational trajectories with optional graph-based transformation analysis.
 
 [![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis)
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
 ---
 
@@ -37,8 +36,9 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 🔍 **ASCII molecular visualization** of transformations
 
 >[!IMPORTANT]
-> Bond orders and formal charges are **empirically assigned** by [xyzgraph](https://github.com/aligfellow/xyzgraph) and should be treated as **indicative only**. They are particularly unreliable for metal-containing systems. Use them as qualitative guides, not quantitative predictions.
-> Needs installed for this analysis `pip install git+https://github.com/aligfellow/xyzgraph.git`
+> Bond orders and formal charges are **empirically assigned** by [xyzgraph](https://github.com/aligfellow/xyzgraph) and should be treated as **indicative only**.   
+> They are particularly unreliable for metal-containing systems. Use them as qualitative guides, not quantitative predictions.  
+> Needs installed for this analysis `pip install git+https://github.com/aligfellow/xyzgraph.git`  
 
 ---
 
@@ -296,13 +296,13 @@ First 5 non-zero vibrational frequencies:
                          VIBRATIONAL GRAPH ANALYSIS SUMMARY
 ================================================================================
 
-Interpret with care, bond orders and charges are empirical and LOW confidence.
-
 Bonds Formed (1):
   Bond (11, 12) [O-C]: formed as single (order=1.0)
 
 Bonds Broken (1):
   Bond (10, 14) [C-C]: broken from single (order=1.0)
+
+Interpret with care, bond orders and charges are empirical and LOW confidence.
 
 Bond Order Changes (4 bonds):
   Bond (1, 10) [C-C]: single→double (order 1.0→2.0)

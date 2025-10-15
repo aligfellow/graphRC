@@ -142,14 +142,14 @@ def save_displacement_pair(
     verbose: bool = False,
 ) -> Optional[Tuple[str, str]]:
     """
-    Save symmetric displaced structures (TS ± level) as XYZ files.
+    Save symmetric displaced structures (TS ± scale) as XYZ files.
     
     Args:
         frames: List of trajectory frames
         ts_frame: Index of TS frame
         output_prefix: Prefix for output files
-        level: Displacement level (1-4, corresponding to amplitudes ~0.2-0.8)
-        max_level: Maximum allowed level
+        scale: Displacement scale (1-4, corresponding to amplitudes ~0.2-0.8)
+        max_level: Maximum allowed scale
         verbose: Print status messages
     
     Returns:
@@ -157,23 +157,23 @@ def save_displacement_pair(
     """
     n_frames = len(frames)
     
-    if not (1 <= level <= max_level):
-        logger.warning(f"Invalid level {level} (must be 1–{max_level})")
+    if not (1 <= scale <= max_level):
+        logger.warning(f"Invalid scale {scale} (must be 1–{max_level})")
         if verbose:
-            print(f"Invalid level {level} (must be 1–{max_level}).")
+            print(f"Invalid scale {scale} (must be 1–{max_level}).")
         return None
     
-    minus_idx = ts_frame - level
-    plus_idx = ts_frame + level
+    minus_idx = ts_frame - scale
+    plus_idx = ts_frame + scale
     
     if not (0 <= minus_idx < n_frames and 0 <= plus_idx < n_frames):
         logger.warning(
-            f"Level {level} out of range for TS {ts_frame} "
+            f"Scale {scale} out of range for TS {ts_frame} "
             f"(total {n_frames} frames)"
         )
         if verbose:
             print(
-                f"Level {level} out of range for TS {ts_frame} "
+                f"Scale {scale} out of range for TS {ts_frame} "
                 f"(total {n_frames} frames)."
             )
         return None
@@ -186,12 +186,12 @@ def save_displacement_pair(
     
     if len(paths) == 2:
         logger.info(
-            f"Saved displaced pair (±{level}): "
+            f"Saved displaced pair (±{scale}): "
             f"{os.path.basename(paths[0])}, {os.path.basename(paths[1])}"
         )
         if verbose:
             print(
-                f"Saved displaced pair (±{level}): "
+                f"Saved displaced pair (±{scale}): "
                 f"{os.path.basename(paths[0])}, {os.path.basename(paths[1])}"
             )
     

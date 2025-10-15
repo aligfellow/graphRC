@@ -130,6 +130,7 @@ def run_analysis(
     displacement_scale: int = config.DEFAULT_DISPLACEMENT_LEVEL,
     orca_pltvib_path: Optional[str] = None,
     print_output: bool = False,
+    show_all: bool = False,
     verbose: bool = False,
     debug: bool = False,
 ) -> Dict[str, Any]:
@@ -163,6 +164,7 @@ def run_analysis(
         displacement_scale: Displacement amplitude level (1-4)
         orca_pltvib_path: Path to orca_pltvib executable
         print_output: Print formatted analysis results to console
+        show_all: Show all changes including minor angles/dihedrals
         verbose: Print status messages
         debug: Enable debug output
         
@@ -257,7 +259,7 @@ def run_analysis(
         from .output import print_analysis_results
         print_analysis_results(
             results_dict,
-            show_all=debug,  # Show all details if debug mode
+            show_all=show_all or debug,  # Show all if requested or in debug mode
             mode=mode
         )
     

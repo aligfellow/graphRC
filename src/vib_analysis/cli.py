@@ -120,6 +120,7 @@ def main():
             displacement_scale=args.displacement_scale,
             orca_pltvib_path=args.orca_path,
             print_output=True,  # CLI always prints output
+            show_all=args.all,  # Show minor changes if requested
             verbose=args.verbose,
             debug=args.debug,
         )

@@ -254,8 +254,6 @@ def print_graph_analysis(
     print(" " * 25 + "VIBRATIONAL GRAPH ANALYSIS SUMMARY")
     print("=" * 80)
 
-    print("\nInterpret with care, bond orders and charges are empirical and LOW confidence.")
-
     # Bond formation / breaking
     formed = comp.get("bonds_formed", [])
     broken = comp.get("bonds_broken", [])
@@ -285,6 +283,8 @@ def print_graph_analysis(
                 f"  Bond ({i}, {j}) [{s1}-{s2}]: "
                 f"broken from {order_str} (order={order1:.1f})"
             )
+
+    print("\nInterpret with care, bond orders and charges are empirical and LOW confidence.")
 
     if bond_order_changes:
         print(f"\nBond Order Changes ({len(bond_order_changes)} bonds):")

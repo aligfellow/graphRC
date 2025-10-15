@@ -141,6 +141,8 @@ def save_displacement_pair(
     """
     Save symmetric displaced structures (TS ± scale) as XYZ files.
     
+    Uses Python-style negative index wrapping (e.g., frame -1 is the last frame).
+    
     Args:
         frames: List of trajectory frames
         ts_frame: Index of TS frame
@@ -160,10 +162,21 @@ def save_displacement_pair(
             print(f"Invalid scale {scale} (must be 1–{max_level}).")
         return None
     
+    # Calculate indices with wrapping support
     minus_idx = ts_frame - scale
     plus_idx = ts_frame + scale
     
-    if not (0 <= minus_idx < n_frames and 0 <= plus_idx < n_frames):
+    # Normalize indices (allow Python-style negative indexing)
+    def normalize_index(idx: int) -> Optional[int]:
+        """Normalize index to valid range, supporting negative indices."""
+        if -n_frames <= idx < n_frames:
+            return idx % n_frames
+        return None
+    
+    norm_minus = normalize_index(minus_idx)
+    norm_plus = normalize_index(plus_idx)
+    
+    if norm_minus is None or norm_plus is None:
         logger.warning(
             f"Scale {scale} out of range for TS {ts_frame} "
             f"(total {n_frames} frames)"
@@ -178,7 +191,7 @@ def save_displacement_pair(
     paths = write_displaced_structures(
         frames, 
         prefix=output_prefix, 
-        indices=[minus_idx, plus_idx]
+        indices=[norm_minus, norm_plus]
     )
     
     if len(paths) == 2:

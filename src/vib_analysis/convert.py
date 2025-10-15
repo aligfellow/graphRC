@@ -5,10 +5,13 @@ Handles ORCA and cclib-compatible formats.
 import os
 import subprocess
 import numpy as np
+import logging
 from ase import Atoms
 from ase.io import write
 import cclib
 from typing import List, Tuple, Optional
+
+logger = logging.getLogger("vib_analysis")
 
 
 def get_orca_pltvib_path():

@@ -71,7 +71,7 @@ def load_trajectory(
     # QM output file - try cclib first, then ORCA
     try:
         if print_output:
-            print(f"Parsing {basename} with cclib...")
+            print(f"\nParsing {basename} with cclib...")
         frequencies, trajectory_string = parse_cclib_output(input_file, mode)
     except Exception as e:
         if print_output:

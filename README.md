@@ -29,7 +29,8 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 ✅ **Internal coordinate tracking** - identifies significant bond, angle, and dihedral changes  
 ✅ **Smart filtering** - separates primary changes from coupled secondary effects  
 
-### Graph-Based Analysis (Optional)
+### Advanced Analysis (--graph flag)
+🔍 **Mode characterization** - identifies rotations, inversions, aromatic systems  
 🔍 **Bond formation/cleavage detection**  
 🔍 **Bond order changes** (single ↔ double ↔ triple)  
 🔍 **Formal charge redistribution** tracking  
@@ -75,7 +76,7 @@ pip install .
 # Simple bond analysis
 vib_analysis trajectory.xyz
 
-# With graph-based transformation detection
+# With analysis (characterization + graph + ASCII visualization)
 vib_analysis calculation.out --graph
 
 # Save structures for IRC calculations
@@ -451,7 +452,7 @@ vibrational analysis parameters:
   --all, -a             Report all changes including minor ones
 
 graph analysis parameters:
-  --graph, -g           Enable graph-based analysis
+  --graph, -g           Enable graph-based analysis and mode characterization (rotations, inversions, aromatic systems)
   --method {cheminf,xtb}
                         Graph building method (default: cheminf)
   --charge CHARGE       Molecular charge for graph building (default: 0)
@@ -654,6 +655,11 @@ By default, frames with maximum RMSD are selected automatically.
 
 ## Important Notes
 
+**Integrated threshold adjustments**
+- Thresholds are reduced by 50% if there is no initial detection of interal coordinate changes
+- This is flagged in the output and these may be less reliable
+- Allows for the detection of changed coordinated in very low magnitude modes (**i.e.** hindered aryl rotation)
+
 ### ⚠️ Bond Orders and Formal Charges
 
 **Empirical Assignment:** Bond orders and formal charges are assigned by **xyzgraph** using empirical rules based on:
@@ -668,8 +674,8 @@ By default, frames with maximum RMSD are selected automatically.
 
 **Use as indicators only!** Always cross-validate with:
 - IRC
-- optimisations of displaced structures
-- chemical insight
+- Optimisations of displaced structures
+- Your own chemical insight
 
 ### File Formats
 
@@ -692,10 +698,9 @@ Must contain ≥2 frames.
 
 ## Acknowledgments
 
-- Built with [ASE](https://wiki.fysik.dtu.dk/ase/) for molecular structures
-- Uses [xyzgraph](https://github.com/aligfellow/xyzgraph) for graph construction
+- Built using [ASE](https://ase-lib.org/) as a helper for neighbours and trajectories
+- Uses [xyzgraph](https://github.com/aligfellow/xyzgraph) for graph construction and ascii printing
 - QM output parsing via [cclib](https://github.com/cclib/cclib)
 - Visualization examples with [v.2.0](https://github.com/briling/v) by Ksenia Briling
 
 ---
-

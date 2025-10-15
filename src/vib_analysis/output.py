@@ -42,6 +42,9 @@ def print_analysis_results(
     if results.get('graph'):
         print_graph_analysis(results['graph'])
     
+    if results.get('characterization'):
+        print_mode_characterization(results['characterization'], results)
+    
     # Vibrational trajectory header
     print("\n" + "=" * 80)
     print(" " * 20 + "VIBRATIONAL TRAJECTORY ANALYSIS")
@@ -58,6 +61,67 @@ def print_analysis_results(
     
     print("\n" + "=" * 80)
 
+
+# =====================================================================================
+# === MODE CHARACTERIZATION OUTPUT ===
+# =====================================================================================
+
+def print_mode_characterization(
+    characterization: Dict[str, Any],
+    vib_results: Dict[str, Any]
+) -> None:
+    """
+    Print mode characterization summary.
+    
+    Args:
+        characterization: Results from characterize_vibrational_mode
+        vib_results: Vibrational analysis results (for atom symbols)
+    """
+    atom_map = vib_results.get('atom_index_map', {})
+    
+    print("\n" + "=" * 80)
+    print(" " * 25 + "MODE CHARACTERIZATION")
+    print("=" * 80)
+    
+    # Main classification
+    mode_type = characterization['mode_type']
+    description = characterization['description']
+    
+    print(f"\nMode Type: {mode_type.upper()}")
+    print(f"Description: {description}")
+    
+    # Rotations
+    rotations = characterization.get('rotations', {})
+    if rotations:
+        print(f"\n{len(rotations)} dihedral rotation(s) detected:")
+        for dihedral, info in rotations.items():
+            rot_desc = info['description']
+            max_change = info['max_change']
+            
+            # Format dihedral
+            if atom_map:
+                dih_str = "-".join(atom_map[i] for i in dihedral)
+            else:
+                dih_str = f"{dihedral}"
+            
+            print(f"  {dih_str}: {rot_desc} ({max_change:.1f}°)")
+    
+    # Inversion
+    inversion = characterization.get('inversion')
+    if inversion:
+        
+        center_atom = inversion['center_atom']
+        center_sym = inversion['center_symbol']
+        hub_fraction = inversion['hub_fraction']
+        moving_group = inversion['moving_group']
+        moving_atom = inversion['moving_atom']
+        max_disp = inversion['max_displacement']
+        num_dihedrals = inversion['num_dihedrals']
+        
+        print(f"\nInversion at atom {center_atom} ({center_sym})")
+        print(f"  {hub_fraction:.0%} of dihedrals involve this atom")
+        print(f"  Moving group: {moving_group}")
+        print(f"  Max displacement: {max_disp:.3f} Å")
 
 # =====================================================================================
 # === VIBRATIONAL ANALYSIS OUTPUT ===
@@ -313,15 +377,15 @@ def print_graph_analysis(
         print("=" * 80)
         print("\nTransition State (TS):\n")
         print(results["ascii_ts"])
-        print("\nFrame 1:\n")
-        print(results.get("ascii_ref", "<no ascii_ref>"))
-        print("\nFrame 2:\n")
-        print(results.get("ascii_disp", "<no ascii_disp>"))
+        
+        # Only print Frame 1/2 if they exist (not for rotations/inversions)
+        if "ascii_ref" in results:
+            print("\nFrame 1:\n")
+            print(results["ascii_ref"])
+        if "ascii_disp" in results:
+            print("\nFrame 2:\n")
+            print(results["ascii_disp"])
     elif debug:
-        logger.debug(
-            "No ASCII data available. Run with -d or ensure "
-            "generate_ascii_summary() is called."
-        )
         logger.debug(
             "No ASCII data available. Run with -d or ensure "
             "generate_ascii_summary() is called."

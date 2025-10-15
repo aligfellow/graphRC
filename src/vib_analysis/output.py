@@ -27,10 +27,10 @@ def print_analysis_results(
     
     Centralized output function used by both CLI and API.
     Provides consistent formatting for all analysis results.
-    Note: VIB_ANALYSIS header is printed by run_analysis() before this function.
+    Note: VIB_ANALYSIS header is printed by run_vib_analysis() before this function.
     
     Args:
-        results: Results dictionary from run_analysis()
+        results: Results dictionary from run_vib_analysis()
         show_all: If True, include minor angle and dihedral changes
         mode: Vibrational mode number (for frequency display)
     """
@@ -68,7 +68,7 @@ def print_vibrational_results(results: Dict[str, Any], show_all: bool = False) -
     Print formatted vibrational analysis results.
     
     Args:
-        results: Results dictionary from run_analysis containing 'vibrational' key
+        results: Results dictionary from run_vib_analysis containing 'vibrational' key
         show_all: If True, include minor angle and dihedral changes
     """
     vib = results['vibrational']

@@ -1,1 +1,1 @@
-from .api import run_analysis, load_trajectory
+from .api import run_vib_analysis, load_trajectory

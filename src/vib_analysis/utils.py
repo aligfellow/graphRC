@@ -14,7 +14,7 @@ from ase.io import write
 logger = logging.getLogger("vib_analysis")
 
 
-def setup_logging(verbose: bool = False, debug: bool = False) -> None:
+def setup_logging(debug: bool = False) -> None:
     """
     Configure logging for vib_analysis package.
     
@@ -22,15 +22,12 @@ def setup_logging(verbose: bool = False, debug: bool = False) -> None:
     In debug mode, prints a simple message before debug logging begins.
     
     Args:
-        verbose: Enable INFO level logging
         debug: Enable DEBUG level logging (also prints initialization message)
     """
     # Determine log level
     if debug:
         level = logging.DEBUG
         print("Initiating debugging:")
-    elif verbose:
-        level = logging.INFO
     else:
         level = logging.WARNING
     
@@ -139,7 +136,7 @@ def save_displacement_pair(
     output_prefix: str,
     scale: int = 1,
     max_level: int = 4,
-    verbose: bool = False,
+    print_output: bool = False,
 ) -> Optional[Tuple[str, str]]:
     """
     Save symmetric displaced structures (TS ± scale) as XYZ files.
@@ -150,7 +147,7 @@ def save_displacement_pair(
         output_prefix: Prefix for output files
         scale: Displacement scale (1-4, corresponding to amplitudes ~0.2-0.8)
         max_level: Maximum allowed scale
-        verbose: Print status messages
+        print_output: Print status messages
     
     Returns:
         (forward_path, reverse_path) if successful, else None
@@ -159,7 +156,7 @@ def save_displacement_pair(
     
     if not (1 <= scale <= max_level):
         logger.warning(f"Invalid scale {scale} (must be 1–{max_level})")
-        if verbose:
+        if print_output:
             print(f"Invalid scale {scale} (must be 1–{max_level}).")
         return None
     
@@ -171,7 +168,7 @@ def save_displacement_pair(
             f"Scale {scale} out of range for TS {ts_frame} "
             f"(total {n_frames} frames)"
         )
-        if verbose:
+        if print_output:
             print(
                 f"Scale {scale} out of range for TS {ts_frame} "
                 f"(total {n_frames} frames)."
@@ -189,7 +186,7 @@ def save_displacement_pair(
             f"Saved displaced pair (±{scale}): "
             f"{os.path.basename(paths[0])}, {os.path.basename(paths[1])}"
         )
-        if verbose:
+        if print_output:
             print(
                 f"Saved displaced pair (±{scale}): "
                 f"{os.path.basename(paths[0])}, {os.path.basename(paths[1])}"

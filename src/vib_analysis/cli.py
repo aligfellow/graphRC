@@ -7,7 +7,7 @@ import sys
 import logging
 
 from . import config
-from .api import run_analysis
+from .api import run_vib_analysis
 from .output import print_analysis_results
 
 
@@ -79,8 +79,6 @@ def main():
     output_group.add_argument('--orca-path', help='Path to ORCA executable directory')
     
     # Logging
-    parser.add_argument('--verbose', '-v', action='store_true',
-                       help='Enable verbose output')
     parser.add_argument('--debug', '-d', action='store_true',
                        help='Enable debug output')
     
@@ -93,7 +91,7 @@ def main():
     
     # Run analysis
     try:
-        results = run_analysis(
+        results = run_vib_analysis(
             input_file=args.input,
             mode=args.mode,
             ts_frame=args.ts_frame,
@@ -121,7 +119,6 @@ def main():
             orca_pltvib_path=args.orca_path,
             print_output=True,  # CLI always prints output
             show_all=args.all,  # Show minor changes if requested
-            verbose=args.verbose,
             debug=args.debug,
         )
     except Exception as e:

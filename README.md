@@ -44,7 +44,7 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 
 ## Installation
 
-### From PyPI
+### From PyPI (*coming soom - maybe*)
 ```bash
 pip install vib-analysis
 ```
@@ -86,97 +86,19 @@ vib_analysis calculation.out --save-displacement
 
 ## How It Works
 
-### Analysis Workflow
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         INPUT FILES                             │
-│            (XYZ trajectory or QM output file)                   │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  STEP 1: LOAD TRAJECTORY                        │
-│                                                                 │
-│  • XYZ file → direct read                                       │
-│  • QM output → cclib parser → trajectory                        │
-│  • QM output → orca_pltvib → trajectory (fallback)              │
-│                                                                 │
-│  Output: List[ASE Atoms], frequencies (optional)                │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│            STEP 2: INTERNAL COORDINATE ANALYSIS                 │
-│                      (core.py)                                  │
-│                                                                 │
-│  1. Build neighbor lists (bond/angle/dihedral detection)        │
-│  2. Calculate coordinate changes across frames                  │
-│  3. Filter by thresholds (bond_threshold, angle_threshold)      │
-│  4. Classify: primary vs coupled secondary changes              │
-│                                                                 │
-│  Output: bond_changes, angle_changes, dihedral_changes          │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-                    ┌────────┴────────┐
-                    │  Graph Analysis?│
-                    └────────┬──────┬─┘
-                         Yes │   No └─────────────────────────────┐
-                             ▼                                    │
-┌─────────────────────────────────────────────────────┐           │
-│    STEP 3: GRAPH-BASED ANALYSIS (Optional)          │           │
-│              (graph_compare.py)                     │           │
-│                                                     │           │
-│  Uses xyzgraph to:                                  │           │
-│  ┌─────────────────────────────────────────────┐    │           │
-│  │ 1. Build molecular graphs                   │    │           │
-│  │    • Transition state graph                 │    │           │
-│  │    • Displaced frame graphs                 │    │           │
-│  │                                             │    │           │
-│  │ 2. Assign bond orders (empirical!)          │    │           │
-│  │                                             │    │           │
-│  │ 3. Assign formal charges (empirical!)       │    │           │
-│  └─────────────────────────────────────────────┘    │           │
-│                                                     │           │
-│  Our code then:                                     │           │
-│  • Compares TS vs displaced graphs                  │           │
-│  • Identifies bonds formed/broken                   │           │
-│  • Tracks bond order changes                        │           │
-│  • Calculates charge redistribution                 │           │
-│  • Generates ASCII visualization                    │           │
-│                                                     │           │
-│  Output: graph comparison, ASCII structures         │           │
-└────────────────────────────┬────────────────────────┘           │
-                             │                                    │
-                             └────────────┬───────────────────────┘
-                                          ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    STEP 4: OUTPUT FORMATTING                    │
-│                        (output.py)                              │
-│                                                                 │
-│  • VIB_ANALYSIS header                                          │
-│  • Debug information (if requested)                             │
-│  • Graph analysis summary (if enabled)                          │
-│  • Vibrational trajectory analysis                              │
-│  • Bond/angle/dihedral changes                                  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
-
 ### Key Components
-
-**xyzgraph's Role (Heavy Lifting):**
-- Constructs molecular graphs from 3D coordinates
-- Assigns bond orders using empirical rules
-- Calculates formal charges using valence rules
-- Provides the graph infrastructure we build upon
 
 **Core Analysis:**
 - Selects relevant frames for comparison
 - Identifies which bonds/angles/dihedrals change
 - Compares graphs to detect transformations
 - Filters and classifies changes
+
+**xyzgraph's Role:**
+- Constructs molecular graphs from 3D coordinates
+- Assigns bond orders using empirical rules
+- Calculates formal charges using valence rules
+- Provides the graph infrastructure that we use
 
 ---
 
@@ -271,6 +193,8 @@ Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
 ---
 
 ### Example 4: With Graph Analysis & Charge Redistribution
+
+![BIMP Rearrangement zoom](images/bimp_zoom.gif)
 
 ```bash
 vib_analysis examples/data/bimp.out -g
@@ -487,16 +411,72 @@ Note: These dihedrals depend on other changes and may not be significant alone.
 vib_analysis <input_file> [options]
 ```
 
-### Common Options
+### Options
+```text
+> vib_analysis -h
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-m, --mode N` | Vibrational mode index | 0 |
-| `-g, --graph` | Enable graph analysis | False |
-| `-d, --debug` | Enable debug output | False |
-| `-v, --verbose` | Verbose logging | False |
-| `-a, --all` | Show all changes (including minor) | False |
-| `--save-displacement` | Save displaced structures | False |
+usage: vib_analysis [-h] [--mode MODE] [--ts-frame TS_FRAME] [--bond-tolerance BOND_TOLERANCE] [--angle-tolerance ANGLE_TOLERANCE]
+                    [--dihedral-tolerance DIHEDRAL_TOLERANCE] [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD]
+                    [--dihedral-threshold DIHEDRAL_THRESHOLD] [--bond-stability BOND_STABILITY] [--all] [--graph] [--method {cheminf,xtb}] [--charge CHARGE]
+                    [--multiplicity MULTIPLICITY] [--distance-tolerance DISTANCE_TOLERANCE] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
+                    [--save-displacement] [--displacement-scale DISPLACEMENT_SCALE] [--no-save] [--orca-path ORCA_PATH] [--debug]
+                    input
+
+Analyze vibrational trajectories for structural changes
+
+positional arguments:
+  input                 Input file (XYZ trajectory or QM output)
+
+options:
+  -h, --help            show this help message and exit
+  --mode, -m MODE       Vibrational mode to analyze (default: 0, ignored for XYZ)
+  --ts-frame TS_FRAME   Frame index to use as TS reference (default: 0)
+  --debug, -d           Enable debug output
+
+vibrational analysis parameters:
+  --bond-tolerance BOND_TOLERANCE
+                        Bond detection tolerance factor (default: 1.4)
+  --angle-tolerance ANGLE_TOLERANCE
+                        Angle detection tolerance factor (default: 1.1)
+  --dihedral-tolerance DIHEDRAL_TOLERANCE
+                        Dihedral detection tolerance factor (default: 1.0)
+  --bond-threshold BOND_THRESHOLD
+                        Threshold for significant bond changes in Å (default: 0.4)
+  --angle-threshold ANGLE_THRESHOLD
+                        Threshold for significant angle changes in degrees (default: 10.0)
+  --dihedral-threshold DIHEDRAL_THRESHOLD
+                        Threshold for significant dihedral changes in degrees (default: 20.0)
+  --bond-stability BOND_STABILITY
+                        Bond stability threshold for filtering coupled changes in Å (default: 0.2, advanced)
+  --all, -a             Report all changes including minor ones
+
+graph analysis parameters:
+  --graph, -g           Enable graph-based analysis
+  --method {cheminf,xtb}
+                        Graph building method (default: cheminf)
+  --charge CHARGE       Molecular charge for graph building (default: 0)
+  --multiplicity MULTIPLICITY
+                        Spin multiplicity (auto-detected if not specified)
+  --distance-tolerance DISTANCE_TOLERANCE
+                        Tolerance for bond formation/breaking (default: 0.2 Å)
+
+ASCII rendering options:
+  --ascii-scale, -as ASCII_SCALE
+                        Scale for ASCII molecular rendering (default: 2.5)
+  --show-h              Show hydrogen atoms in ASCII rendering
+  --ascii-shells, -ash ASCII_SHELLS
+                        Neighbor shells around transformation core (default: 1)
+
+output options:
+  --save-displacement, -sd
+                        Save displaced structure pair
+  --displacement-scale, -ds DISPLACEMENT_SCALE
+                        Displacement level (1-4, ~0.2-0.8 amplitude) (default: 1)
+  --no-save             Do not save trajectory to disk (keep in memory only)
+  --orca-path ORCA_PATH
+                        Path to ORCA executable directory
+```
+
 
 ### Threshold Tuning
 
@@ -556,67 +536,33 @@ vib_analysis bimp.out \
 
 ## Python API
 
-### Basic Analysis
-
+See examplese/examples.ipynb
+This function will return a dictionary of the results, and printing can be turned on to produce the same as the CLI
+For example:
 ```python
-from vib_analysis import run_analysis
+from vib_analysis import run_vib_analysis
 
-# Run analysis
-results = run_analysis('trajectory.xyz')
+orca_out = 'data/bimp.v000.xyz'
 
-# Access bond changes
-for bond, (delta, initial) in results['vibrational']['bond_changes'].items():
-    i, j = bond
-    symbols = results['vibrational']['atom_index_map']
-    print(f"Bond ({i},{j}) [{symbols[i]}-{symbols[j]}]: Δ={delta:.3f} Å")
+results = run_vib_analysis(
+        input_file=orca_out,
+    )
+
+vib = results['vibrational']
+print(vib)
+
+theoretical_bond_changes = [(11,12), (10,14)]
+if all(bond in vib['bond_changes'] for bond in theoretical_bond_changes):
+    print(f'True: All theoretical bond changes {theoretical_bond_changes} found in results.')
 ```
-
-### With Formatted Output
-
+Outputs:
 ```python
-from vib_analysis import run_analysis
-from vib_analysis.utils import setup_logging
-
-# Configure logging
-setup_logging(debug=True)
-
-# Run with formatted output
-results = run_analysis(
-    'calculation.out',
-    mode=0,
-    enable_graph=True,
-    print_output=True,  # Display formatted results
-    save_displacement=True,
-    verbose=True
-)
+{'bond_changes': {(10, 14): (0.426, 2.656), (11, 12): (2.052, 2.064)}, 'angle_changes': {}, 'minor_angle_changes': {(13, 12, 29): (14.436, 122.116), (29, 12, 30): (12.54, 117.79), (12, 13, 14): (14.118, 123.702)}, 'dihedral_changes': {}, 'minor_dihedral_changes': {(0, 1, 10, 11): (36.48, 14.986), (4, 9, 10, 11): (50.966, 169.776), (29, 12, 13, 31): (67.358, 17.521), (12, 13, 31, 33): (62.151, 330.369)}, 'frame_indices': [5, 15], 'atom_index_map': {0: 'O', 1: 'C', ...}}
+True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
 ```
+  - This can be used to check for a known vibrational mode (theoretical_bond_change) in `results['bond_changes']`
+  - So in theory this could identify whether the correct TS mode has been identidied in a high throughput search if the atom indices are known (or available automatically)
 
-### Customized Analysis
-
-```python
-results = run_analysis(
-    'trajectory.xyz',
-    # Detection sensitivity
-    bond_tolerance=1.4,
-    angle_tolerance=1.1,
-    dihedral_tolerance=1.0,
-    # Reporting thresholds
-    bond_threshold=0.4,
-    angle_threshold=10.0,
-    dihedral_threshold=20.0,
-    bond_stability_threshold=0.2,
-    # Graph analysis
-    enable_graph=True,
-    graph_method='cheminf',
-    charge=0,
-    ascii_scale=2.5,
-    ascii_include_h=False,
-    # Output
-    save_trajectory=True,
-    save_displacement=False,
-    print_output=False
-)
-```
 
 ### Results Structure
 
@@ -647,24 +593,6 @@ results = run_analysis(
     },
     'displacement_files': Tuple[str, str]  # If save_displacement=True
 }
-```
-
-### Validation Example
-
-```python
-from vib_analysis import run_analysis
-
-# Run analysis
-results = run_analysis('bimp.v000.xyz')
-
-# Validate against expected changes
-expected_bonds = [(11, 12), (10, 14)]
-found_bonds = list(results['vibrational']['bond_changes'].keys())
-
-if all(bond in found_bonds for bond in expected_bonds):
-    print("✓ All expected bond changes detected")
-else:
-    print("✗ Some bond changes missing")
 ```
 
 ---

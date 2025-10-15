@@ -30,7 +30,7 @@ def load_trajectory(
     mode: int = 0,
     orca_pltvib_path: Optional[str] = None,
     save_to_disk: bool = True,
-    verbose: bool = False
+    print_output: bool = False
 ) -> Dict[str, Any]:
     """
     Load vibrational trajectory from XYZ or QM output file.
@@ -40,7 +40,7 @@ def load_trajectory(
         mode: Vibrational mode index (ignored for XYZ files)
         orca_pltvib_path: Optional path to orca_pltvib executable
         save_to_disk: Whether to save converted trajectory to disk
-        verbose: Print status messages
+        print_output: Print status messages
     
     Returns:
         Dictionary with keys:
@@ -58,7 +58,7 @@ def load_trajectory(
     
     # Direct XYZ trajectory file
     if ext.lower() == ".xyz":
-        if verbose:
+        if print_output:
             print(f"Reading trajectory from {basename}")
         frames = read_xyz_trajectory(input_file)
         trajectory_file = input_file
@@ -70,11 +70,11 @@ def load_trajectory(
     
     # QM output file - try cclib first, then ORCA
     try:
-        if verbose:
+        if print_output:
             print(f"Parsing {basename} with cclib...")
         frequencies, trajectory_string = parse_cclib_output(input_file, mode)
     except Exception as e:
-        if verbose:
+        if print_output:
             print(f"cclib failed ({e}), trying orca_pltvib...")
         
         if orca_pltvib_path is None:
@@ -93,7 +93,7 @@ def load_trajectory(
     if save_to_disk:
         output_path = f"{root}.v{mode:03d}.xyz"
         trajectory_file = write_trajectory_file(trajectory_string, output_path)
-        if verbose:
+        if print_output:
             print(f"Saved trajectory to {os.path.basename(trajectory_file)}")
     
     return {
@@ -103,7 +103,7 @@ def load_trajectory(
     }
 
 
-def run_analysis(
+def run_vib_analysis(
     input_file: str,
     mode: int = 0,
     ts_frame: int = config.DEFAULT_TS_FRAME,
@@ -131,7 +131,6 @@ def run_analysis(
     orca_pltvib_path: Optional[str] = None,
     print_output: bool = False,
     show_all: bool = False,
-    verbose: bool = False,
     debug: bool = False,
 ) -> Dict[str, Any]:
     """
@@ -165,7 +164,6 @@ def run_analysis(
         orca_pltvib_path: Path to orca_pltvib executable
         print_output: Print formatted analysis results to console
         show_all: Show all changes including minor angles/dihedrals
-        verbose: Print status messages
         debug: Enable debug output
         
     Returns:
@@ -176,14 +174,14 @@ def run_analysis(
             - 'displacement_files': Paths to saved displacement files (if enabled)
     """
     # Set up logging and print header if outputting to console
-    if print_output or verbose or debug:
+    if print_output or debug:
         # Print main header first
         print("=" * 80)
         print(" " * 30 + "VIB_ANALYSIS")
         print("=" * 80)
         
         # Set up logging (prints debug message if debug mode)
-        setup_logging(verbose=verbose, debug=debug)
+        setup_logging(debug=debug)
     
     # Load trajectory
     trajectory_data = load_trajectory(
@@ -191,12 +189,12 @@ def run_analysis(
         mode=mode,
         orca_pltvib_path=orca_pltvib_path,
         save_to_disk=save_trajectory,
-        verbose=verbose
+        print_output=print_output
     )
     
     frames = trajectory_data['frames']
     
-    if verbose:
+    if print_output:
         print(f"Loaded {len(frames)} frames from trajectory")
     
     # Analyze internal coordinates
@@ -215,7 +213,7 @@ def run_analysis(
     # Graph analysis (optional)
     graph_results = None
     if enable_graph:
-        if verbose:
+        if print_output:
             print("Running graph-based analysis...")
         
         # Add ts_frame to internal_changes for graph analysis
@@ -244,7 +242,7 @@ def run_analysis(
             output_prefix=output_prefix,
             scale=displacement_scale,
             max_level=config.MAX_DISPLACEMENT_LEVEL,
-            verbose=verbose,
+            print_output=print_output,
         )
     
     results_dict = {

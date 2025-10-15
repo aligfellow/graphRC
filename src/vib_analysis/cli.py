@@ -122,9 +122,9 @@ def main():
                        help='Neighbor shells around transformation core (default: 1)')
     
     # Other options
-    parser.add_argument('--save-displacement', action='store_true',
+    parser.add_argument('-sd', '--save-displacement', action='store_true',
                        help='Save displaced structures (default nearest forward/reverse or specified level)')
-    parser.add_argument('--displacement-amplitude', type=int,
+    parser.add_argument('-da', '--displacement-amplitude', type=int, default=1,
                        help='Symmetric displacement level (1–4 => amplitudes ~0.2–0.8) about --ts-frame; saves two frames.')
     parser.add_argument('--no-save', action='store_true',
                        help='Keep trajectory in memory only (don\'t save to disk)')

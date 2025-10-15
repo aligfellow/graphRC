@@ -466,3 +466,130 @@ Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial = 359.998 °
 ```
 - this output used `orca_6.0.1` and the `CCLIB` parsing is supported 
 - newer versions, *i.e.* `orca_6.1.0`, will fall back to `orca_pltvib` if available
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER INTERFACE                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  cli.py                          Python Scripts                │
+│  ├─ Argument parsing             ├─ from vib_analysis import   │
+│  ├─ CLI options                  │   run_analysis              │
+│  └─ Output formatting            └─ Direct API calls           │
+│                                                                 │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      HIGH-LEVEL API                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  api.py                                                         │
+│  ├─ load_trajectory()   ─────►  Loads/converts trajectories    │
+│  │   └─ Returns: frames, frequencies, file_path                │
+│  │                                                              │
+│  └─ run_analysis()      ─────►  Complete analysis pipeline     │
+│      └─ Returns: trajectory, vibrational, graph, files         │
+│                                                                 │
+└──┬─────────────┬──────────────┬──────────────┬─────────────────┘
+   │             │              │              │
+   ▼             ▼              ▼              ▼
+┌────────┐  ┌────────┐    ┌────────┐    ┌────────┐
+│convert │  │  core  │    │ graph  │    │ utils  │
+│  .py   │  │  .py   │    │compare │    │  .py   │
+└────────┘  └────────┘    │  .py   │    └────────┘
+                          └────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                      MODULE RESPONSIBILITIES                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  convert.py          core.py              graph_compare.py     │
+│  ═══════════         ════════              ═══════════════     │
+│  QM → trajectory     Internal coords       Graph building      │
+│  • ORCA parser       • Read XYZ           • NetworkX graphs    │
+│  • cclib parser      • Build bonds        • Bond formation     │
+│  • String to frames  • Calculate angles   • Charge analysis    │
+│                      • Calculate changes  • ASCII rendering    │
+│                      • RMSD analysis                           │
+│                                                                │
+│  utils.py                                                      │
+│  ═════════                                                     │
+│  File I/O                                                      │
+│  • Write trajectory files                                      │
+│  • Write displaced structures                                  │
+│  • Save displacement pairs                                     │
+│                                                                │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                       DATA FLOW DIAGRAM                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Input File (ORCA/Gaussian/XYZ)                                │
+│         │                                                       │
+│         ▼                                                       │
+│  load_trajectory()                                             │
+│         ├─► convert.parse_cclib_output() ──┐                  │
+│         ├─► convert.convert_orca() ─────────┤                  │
+│         └─► core.read_xyz_trajectory() ─────┤                  │
+│                                             │                  │
+│                                             ▼                  │
+│                                    List[Atoms] frames          │
+│                                             │                  │
+│         ┌───────────────────────────────────┴──────┐           │
+│         │                                          │           │
+│         ▼                                          ▼           │
+│  Vibrational Analysis                      Graph Analysis     │
+│  core.analyze_internal_displacements()     (optional)         │
+│         │                                   graph_compare.*   │
+│         ▼                                          │           │
+│  {bond_changes, angle_changes, ...}                │           │
+│         │                                          │           │
+│         └──────────────┬───────────────────────────┘           │
+│                        ▼                                       │
+│                   Final Results                                │
+│                        │                                       │
+│         ┌──────────────┼──────────────┐                        │
+│         ▼              ▼              ▼                        │
+│    Print to CLI   Return dict   Save files                    │
+│                                  (utils.*)                     │
+│                                                                │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    PARAMETER ORGANIZATION                        │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Vibrational Analysis Parameters                               │
+│  ───────────────────────────────                               │
+│  • bond_tolerance        (float, default: 1.4)                 │
+│  • angle_tolerance       (float, default: 1.1)                 │
+│  • dihedral_tolerance    (float, default: 1.0)                 │
+│  • bond_threshold        (float, default: 0.4 Å)               │
+│  • angle_threshold       (float, default: 10.0°)               │
+│  • dihedral_threshold    (float, default: 20.0°)               │
+│  • ts_frame              (int, default: 0)                     │
+│                                                                │
+│  Graph Analysis Parameters (optional)                          │
+│  ─────────────────────────────────                             │
+│  • enable_graph          (bool, default: False)                │
+│  • graph_method          (str, default: 'cheminf')             │
+│  • charge                (int, default: 0)                     │
+│  • multiplicity          (int, optional)                       │
+│  • distance_tolerance    (float, default: 0.2 Å)               │
+│  • ascii_scale           (float, default: 2.5)                 │
+│  • ascii_include_h       (bool, default: False)                │
+│  • ascii_neighbor_shells (int, default: 1)                     │
+│                                                                │
+│  Output Control Parameters                                     │
+│  ──────────────────────                                        │
+│  • save_trajectory       (bool, default: True)                 │
+│  • save_displacement     (bool, default: False)                │
+│  • displacement_level    (int, default: 1, range: 1-4)         │
+│  • orca_pltvib_path      (str, optional)                       │
+│  • verbose               (bool, default: False)                │
+│  • debug                 (bool, default: False)                │
+│                                                                │
+└─────────────────────────────────────────────────────────────────┘
+```

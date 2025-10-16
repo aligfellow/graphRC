@@ -45,16 +45,13 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 
 ## Installation
 
-### From PyPI (*coming soom - maybe*)
-```bash
-pip install vib-analysis
-```
-
 ### From Source (*up-to-date*)
 ```bash
 git clone https://github.com/aligfellow/vib_analysis.git
 cd vib_analysis
 pip install .
+# or simply
+pip install git+https://github.com/aligfellow/vib_analysis.git
 ```
 
 ### Dependencies
@@ -63,6 +60,10 @@ pip install .
 - `numpy` - Numerical operations
 - `networkx` - Graph operations
 - `xyzgraph` - Molecular graph construction (does the graph analysis)
+
+> [!IMPORTANT]
+> xyzgraph must be installed *first*
+> `pip install git+https://github.com/aligfellow/xyzgraph.git`
 
 **Optional:**
 - `cclib` - Parsing Gaussian/ORCA output

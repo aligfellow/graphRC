@@ -39,7 +39,6 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 >[!IMPORTANT]
 > Bond orders and formal charges are **empirically assigned** by [xyzgraph](https://github.com/aligfellow/xyzgraph) and should be treated as **indicative only**.   
 > They are particularly unreliable for metal-containing systems. Use them as qualitative guides, not quantitative predictions.  
-> Needs installed for this analysis `pip install git+https://github.com/aligfellow/xyzgraph.git`  
 
 ---
 

@@ -133,7 +133,7 @@ Bond (0, 5)  [C-Cl]  Δ =   1.355 Å,  Initial =   1.952 Å
 ================================================================================
 ```
 
-**Interpretation:** Classic SN2 mechanism - C-F bond breaking concurrent with C-Cl bond forming.
+**Interpretation:** Classic SN2 mechanism - concerted C-F bond breaking and C-Cl bond forming.
 
 ---
 
@@ -653,12 +653,12 @@ Generate structures for IRC or optimization:
 vib_analysis input.xyz --save-displacement
 
 # Higher amplitude: ±2 (~0.4)
-vib_analysis input.xyz --save-displacement --level 2
+vib_analysis input.xyz --save-displacement --displacement-scale 2
 
 # Creates: input_F.xyz (forward), input_R.xyz (reverse)
 ```
 
-Displacement levels 1-4 correspond to amplitudes ~0.2, 0.4, 0.6, 0.8.
+Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8.
 
 ### Custom Frame Selection
 
@@ -677,18 +677,6 @@ By default, frames with maximum RMSD are selected automatically.
 - Thresholds are reduced by 50% if there is no initial detection of interal coordinate changes
 - This is flagged in the output and these may be less reliable
 - Allows for the detection of changed coordinated in very low magnitude modes (**i.e.** hindered aryl rotation)
-
-### ⚠️ Bond Orders and Formal Charges
-
-**Empirical Assignment:** Bond orders and formal charges are assigned by **xyzgraph** using empirical rules based on:
-- Atomic valences
-- Electronegativity
-- Geometric criteria
-
-**Reliability:**
-- ✅ **Reliable** for simple organic molecules
-- ⚠️ **Uncertain** for charged species, radicals
-- ❌ **Unreliable** for transition metals, lanthanides, actinides
 
 **Use as indicators only!** Always cross-validate with:
 - IRC

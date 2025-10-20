@@ -1,8 +1,5 @@
 import numpy as np
 from ase import Atoms
-from ase.neighborlist import NeighborList, natural_cutoffs
-from ase.geometry import geometry
-from ase.data import covalent_radii
 from itertools import combinations
 import os
 import logging
@@ -60,101 +57,94 @@ def read_xyz_trajectory(file_path: str) -> List[Atoms]:
 def build_internal_coordinates(
     frame: Atoms, 
     bond_tolerance: float = config.BOND_TOLERANCE,
-    angle_tolerance: float = config.ANGLE_TOLERANCE, 
-    dihedral_tolerance: float = config.DIHEDRAL_TOLERANCE
 ) -> Dict[str, List[Tuple[int, ...]]]:
     """
-    Build internal coordinates (bonds, angles, dihedrals) for a given ASE Atoms frame.
+    Build internal coordinates (bonds, angles, dihedrals) using xyzgraph with hierarchical thresholds.
+    
+    Uses three separate graphs with progressively tighter thresholds:
+    - Bond graph (flexible): captures forming/breaking bonds in TS
+    - Tighter graph: more conservative connectivity for angles/dihedrals
     
     Args:
         frame: ASE Atoms object
-        bond_tolerance: Multiplier for covalent radii for bond detection
-        angle_tolerance: Multiplier for covalent radii for angle detection
-        dihedral_tolerance: Multiplier for covalent radii for dihedral detection
+        bond_tolerance: Multiplier for bond detection (most flexible)
         
     Returns:
         Dictionary with keys 'bonds', 'angles', 'dihedrals' containing lists of
         atom index tuples
     """
-    cutoffs = natural_cutoffs(frame, mult=bond_tolerance)
-    nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
-    nl.update(frame)
-
-    bonds = []
-    # Build bond list
-    for i in range(len(frame)):
-        indices, offsets = nl.get_neighbors(i)
-        for j in indices:
-            if j > i:
-                bond = (int(i), int(j))
-                bonds.append(bond)
+    from xyzgraph import build_graph
     
-    # Build connectivity graph from all bonds
-    all_connectivity = {}
-    for i, j in bonds:
-        all_connectivity.setdefault(i, set()).add(j)
-        all_connectivity.setdefault(j, set()).add(i)
+    # Convert ASE Atoms to xyzgraph format
+    atoms_list = [(frame.get_chemical_symbols()[i], tuple(frame.positions[i])) 
+                  for i in range(len(frame))]
 
+    # xyzgraph base thresholds for flexible bond graph
+    threshold_h_nm = 0.42 * bond_tolerance
+    threshold_nm_nm = 0.55 * bond_tolerance 
+    threshold_h_m = 0.50 * bond_tolerance
+    threshold_m_l = 0.65  # Keep metal-ligand tight (no scaling)
+    threshold_h_h = 0.40 * bond_tolerance 
+    
+    # 1. Build flexible graph for bonds
+    G_bonds = build_graph(
+        atoms=atoms_list,
+        threshold=1.0,  # No additional global scaling
+        threshold_h_nonmetal=threshold_h_nm,
+        threshold_nonmetal_nonmetal=threshold_nm_nm,
+        threshold_h_metal=threshold_h_m,
+        threshold_metal_ligand=threshold_m_l,
+        threshold_h_h=threshold_h_h,
+        quick=True,  # Fast mode - we don't need bond orders
+        method='cheminf',
+        debug=False
+    )
+    
+    # Extract bonds from flexible graph
+    bonds = [(i, j) for i, j in G_bonds.edges()]
+    logger.debug(f"Built bond graph with {len(bonds)} bonds (tolerance={bond_tolerance})")
+    
+    # 2. Build tighter graph for angles/dihedrals with default xyzgraph thresholds
+    G_tight = build_graph(
+        atoms=atoms_list,
+        threshold=1.0,  # Use xyzgraph defaults
+        quick=True,
+        method='cheminf',
+        debug=False
+    )
+    
+    # Derive angles from tighter connectivity
     angles = []
-    # Tighter neighbor list for angles and dihedrals
-    angle_cutoffs = natural_cutoffs(frame, mult=angle_tolerance)
-    angle_nl = NeighborList(angle_cutoffs, self_interaction=False, bothways=False)
-    angle_nl.update(frame)
-
-    angle_bonds = set()
-    for i in range(len(frame)):
-        indices, offsets = angle_nl.get_neighbors(i)
-        for j in indices:
-            if j > i:
-                angle_bonds.add((int(i), int(j)))
-
-    # Build connectivity for angles from stricter bonds
-    angle_connectivity = {}
-    for i, j in angle_bonds:
-        angle_connectivity.setdefault(i, set()).add(j)
-        angle_connectivity.setdefault(j, set()).add(i)
-
-    # Build angles from angle connectivity
-    angles = []
-    for j in angle_connectivity:
-        neighbors = list(angle_connectivity[j])
-        for i, k in combinations(neighbors, 2):
-            angles.append((int(i), int(j), int(k)))
-
-    dihedrals = []
-    # Build stricter bond list for dihedrals
-    dihedral_cutoffs = natural_cutoffs(frame, mult=dihedral_tolerance)
-    dihedral_nl = NeighborList(dihedral_cutoffs, self_interaction=False, bothways=True)
-    dihedral_nl.update(frame)
+    for j in G_tight.nodes():
+        neighbors = list(G_tight.neighbors(j))
+        if len(neighbors) >= 2:
+            for i, k in combinations(neighbors, 2):
+                angles.append((int(i), int(j), int(k)))
     
-    dihedral_bonds = []
-    for i in range(len(frame)):
-        indices, offsets = dihedral_nl.get_neighbors(i)
-        for j in indices:
-            if j > i:
-                dihedral_bonds.append((int(i), int(j)))
-    
-    # Build connectivity for dihedrals from strictest bonds
-    dihedral_connectivity = {}
-    for i, j in dihedral_bonds:
-        dihedral_connectivity.setdefault(i, set()).add(j)
-        dihedral_connectivity.setdefault(j, set()).add(i)
-
-    # Build dihedrals from dihedral connectivity
+    # Derive dihedrals from tightest connectivity
     dihedrals = []
-    for b, c in dihedral_bonds:
-        if b not in dihedral_connectivity or c not in dihedral_connectivity:
-            continue
-        
-        a_neighbors = dihedral_connectivity[b] - {c}
-        d_neighbors = dihedral_connectivity[c] - {b}
+    for b, c in G_tight.edges():
+        a_neighbors = set(G_tight.neighbors(b)) - {c}
+        d_neighbors = set(G_tight.neighbors(c)) - {b}
 
         for a in a_neighbors:
             for d in d_neighbors:
                 if a != d:
                     dihedrals.append((int(a), int(b), int(c), int(d)))
-
-    return {'bonds': bonds, 'angles': angles, 'dihedrals': dihedrals}
+    
+    # Build connectivity dictionary from tight graph for angle/dihedral consistency
+    # Use G_tight since dihedrals (used for inversion detection) come from this graph
+    connectivity = {}
+    for i, j in G_tight.edges():
+        connectivity.setdefault(i, set()).add(j)
+        connectivity.setdefault(j, set()).add(i)
+    
+    return {
+        'bonds': bonds, 
+        'angles': angles, 
+        'dihedrals': dihedrals,
+        'connectivity': connectivity
+    }
 
 def calculate_bond_length(frame: Atoms, i: int, j: int) -> float:
     """Calculate bond length between atoms i and j."""
@@ -391,8 +381,6 @@ def select_most_diverse_frames(frames, top_n=2):
 def analyze_internal_displacements(
     xyz_file_or_frames: Union[str, List[Atoms]],
     bond_tolerance: float = config.BOND_TOLERANCE,
-    angle_tolerance: float = config.ANGLE_TOLERANCE,
-    dihedral_tolerance: float = config.DIHEDRAL_TOLERANCE,
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
@@ -408,9 +396,7 @@ def analyze_internal_displacements(
     
     Args:
         xyz_file_or_frames: Path to XYZ trajectory file or list of ASE Atoms objects
-        bond_tolerance: Multiplier for covalent radii for bond detection
-        angle_tolerance: Multiplier for covalent radii for angle detection
-        dihedral_tolerance: Multiplier for covalent radii for dihedral detection
+        bond_tolerance: Multiplier for xyzgraph bond detection thresholds
         bond_threshold: Minimum bond change to report (Å)
         angle_threshold: Minimum angle change to report (degrees)
         dihedral_threshold: Minimum dihedral change to report (degrees)
@@ -446,8 +432,6 @@ def analyze_internal_displacements(
     internal_coords = build_internal_coordinates(
         frame=frames[ts_frame],
         bond_tolerance=bond_tolerance,
-        angle_tolerance=angle_tolerance,
-        dihedral_tolerance=dihedral_tolerance,
     )
     
     selected_indices = select_most_diverse_frames(frames)
@@ -477,4 +461,5 @@ def analyze_internal_displacements(
         "minor_dihedral_changes": dependent_dihedrals,
         "frame_indices": selected_indices,
         "atom_index_map": atom_index_map,
+        "connectivity": internal_coords['connectivity'],
     }

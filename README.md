@@ -434,8 +434,7 @@ vib_analysis <input_file> [options]
 ```text
 > vib_analysis -h
 
-usage: vib_analysis [-h] [--mode MODE] [--ts-frame TS_FRAME] [--bond-tolerance BOND_TOLERANCE] [--angle-tolerance ANGLE_TOLERANCE]
-                    [--dihedral-tolerance DIHEDRAL_TOLERANCE] [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD]
+usage: vib_analysis [-h] [--mode MODE] [--ts-frame TS_FRAME] [--bond-tolerance BOND_TOLERANCE] [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD]
                     [--dihedral-threshold DIHEDRAL_THRESHOLD] [--bond-stability BOND_STABILITY] [--all] [--graph] [--method {cheminf,xtb}] [--charge CHARGE]
                     [--multiplicity MULTIPLICITY] [--distance-tolerance DISTANCE_TOLERANCE] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
                     [--save-displacement] [--displacement-scale DISPLACEMENT_SCALE] [--no-save] [--orca-path ORCA_PATH] [--debug]
@@ -455,10 +454,6 @@ options:
 vibrational analysis parameters:
   --bond-tolerance BOND_TOLERANCE
                         Bond detection tolerance factor (default: 1.4)
-  --angle-tolerance ANGLE_TOLERANCE
-                        Angle detection tolerance factor (default: 1.1)
-  --dihedral-tolerance DIHEDRAL_TOLERANCE
-                        Dihedral detection tolerance factor (default: 1.0)
   --bond-threshold BOND_THRESHOLD
                         Threshold for significant bond changes in Å (default: 0.4)
   --angle-threshold ANGLE_THRESHOLD
@@ -505,9 +500,6 @@ vib_analysis input.xyz --bond-threshold 0.3
 
 # Adjust angle detection
 vib_analysis input.xyz --angle-threshold 15.0
-
-# Advanced: tune bond stability filtering
-vib_analysis input.xyz --bond-stability 0.15
 ```
 
 ### Graph Analysis Options
@@ -624,9 +616,7 @@ All defaults are in `config.py` and can be overridden:
 
 **Detection Tolerances:**
 ```python
-BOND_TOLERANCE = 1.4        # Multiplier for covalent radii
-ANGLE_TOLERANCE = 1.1
-DIHEDRAL_TOLERANCE = 1.0
+BOND_TOLERANCE = 1.3        # vdW radii multiplier for TS
 ```
 
 **Significance Thresholds:**
@@ -704,7 +694,7 @@ Must contain ≥2 frames.
 
 ## Acknowledgments
 
-- Built using [ASE](https://ase-lib.org/) as a helper for neighbours and trajectories
+- Built using [ASE](https://ase-lib.org/) as a helper for trajectories
 - Uses [xyzgraph](https://github.com/aligfellow/xyzgraph) for graph construction and ascii printing
 - QM output parsing via [cclib](https://github.com/cclib/cclib)
 - Visualization examples with [v.2.0](https://github.com/briling/v) by Ksenia Briling

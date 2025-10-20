@@ -9,7 +9,6 @@ graph-based analysis.
 import os
 import logging
 from typing import List, Optional, Dict, Any
-from ase import Atoms
 
 from . import config
 from .core import analyze_internal_displacements, read_xyz_trajectory
@@ -110,8 +109,6 @@ def run_vib_analysis(
     ts_frame: int = config.DEFAULT_TS_FRAME,
     # Vibrational analysis parameters
     bond_tolerance: float = config.BOND_TOLERANCE,
-    angle_tolerance: float = config.ANGLE_TOLERANCE,
-    dihedral_tolerance: float = config.DIHEDRAL_TOLERANCE,
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
@@ -143,8 +140,6 @@ def run_vib_analysis(
         ts_frame: Frame index to use as TS reference
         
         bond_tolerance: Multiplier for bond detection cutoffs
-        angle_tolerance: Multiplier for angle detection cutoffs
-        dihedral_tolerance: Multiplier for dihedral detection cutoffs
         bond_threshold: Threshold for significant bond changes (Å)
         angle_threshold: Threshold for significant angle changes (degrees)
         dihedral_threshold: Threshold for significant dihedral changes (degrees)
@@ -206,8 +201,6 @@ def run_vib_analysis(
         frames,
         ts_frame=ts_frame,
         bond_tolerance=bond_tolerance,
-        angle_tolerance=angle_tolerance,
-        dihedral_tolerance=dihedral_tolerance,
         bond_threshold=bond_threshold,
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,
@@ -233,8 +226,6 @@ def run_vib_analysis(
             frames,
             ts_frame=ts_frame,
             bond_tolerance=bond_tolerance,
-            angle_tolerance=angle_tolerance,
-            dihedral_tolerance=dihedral_tolerance,
             bond_threshold=bond_threshold * 0.5,
             angle_threshold=angle_threshold * 0.5,
             dihedral_threshold=dihedral_threshold * 0.5,
@@ -294,12 +285,10 @@ def run_vib_analysis(
                 if inv_info:
                     hub_atom = inv_info['center_atom']
                     atoms_of_interest.add(hub_atom)
-                    # Add neighbors from TS frame
-                    from ase.neighborlist import NeighborList, natural_cutoffs
-                    cutoffs = natural_cutoffs(frames[ts_frame], mult=1.2)
-                    nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
-                    nl.update(frames[ts_frame])
-                    neighbors, _ = nl.get_neighbors(hub_atom)
+                    # Add neighbors from connectivity (from internal_coords)
+                    # This is populated by build_internal_coordinates via xyzgraph
+                    connectivity = vib_results.get('connectivity', {})
+                    neighbors = connectivity.get(hub_atom, set())
                     atoms_of_interest.update(neighbors)
         
         # Add ts_frame to internal_changes for graph analysis

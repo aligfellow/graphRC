@@ -93,7 +93,7 @@ def build_ts_graph(
         charge=charge,
         multiplicity=multiplicity,
         bond=sorted(set(bonds_to_add)),
-        unbond=sorted(set(bonds_to_remove))
+        unbond=sorted(set(bonds_to_remove)),
     )
 
     # Annotate vibrational bonds

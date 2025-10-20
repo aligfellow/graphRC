@@ -30,10 +30,6 @@ def main():
     vib_group = parser.add_argument_group('vibrational analysis parameters')
     vib_group.add_argument('--bond-tolerance', type=float, default=config.BOND_TOLERANCE,
                           help=f'Bond detection tolerance factor (default: {config.BOND_TOLERANCE})')
-    vib_group.add_argument('--angle-tolerance', type=float, default=config.ANGLE_TOLERANCE,
-                          help=f'Angle detection tolerance factor (default: {config.ANGLE_TOLERANCE})')
-    vib_group.add_argument('--dihedral-tolerance', type=float, default=config.DIHEDRAL_TOLERANCE,
-                          help=f'Dihedral detection tolerance factor (default: {config.DIHEDRAL_TOLERANCE})')
     vib_group.add_argument('--bond-threshold', type=float, default=config.BOND_THRESHOLD,
                           help=f'Threshold for significant bond changes in Å (default: {config.BOND_THRESHOLD})')
     vib_group.add_argument('--angle-threshold', type=float, default=config.ANGLE_THRESHOLD,
@@ -97,8 +93,6 @@ def main():
             ts_frame=args.ts_frame,
             # Vibrational parameters
             bond_tolerance=args.bond_tolerance,
-            angle_tolerance=args.angle_tolerance,
-            dihedral_tolerance=args.dihedral_tolerance,
             bond_threshold=args.bond_threshold,
             angle_threshold=args.angle_threshold,
             dihedral_threshold=args.dihedral_threshold,

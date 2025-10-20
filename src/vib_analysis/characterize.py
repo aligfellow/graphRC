@@ -11,7 +11,6 @@ No complex geometry calculations - just counting and simple logic.
 import numpy as np
 from typing import List, Dict, Tuple, Any, Optional
 from ase import Atoms
-from ase.neighborlist import NeighborList, natural_cutoffs
 import logging
 
 logger = logging.getLogger("vib_analysis")
@@ -87,7 +86,8 @@ def detect_inversion_hub(
         return None
     
     # Find atom with highest count
-    hub_atom = max(hub_counts, key=hub_counts.get)
+    hub_atom = max(hub_counts, key=lambda x: hub_counts[x])
+
     hub_count = hub_counts[hub_atom]
     hub_fraction = hub_count / len(dihedral_changes)
     
@@ -113,7 +113,8 @@ def detect_inversion_hub(
 def identify_moving_group(
     hub_atom: int,
     frame_ts: Atoms,
-    frames_displaced: List[Atoms]
+    frames_displaced: List[Atoms],
+    connectivity: Dict[int, set]
 ) -> Tuple[int, float, str]:
     """
     Identify which group on the hub atom moves most during inversion.
@@ -122,16 +123,13 @@ def identify_moving_group(
         hub_atom: Index of inverting atom
         frame_ts: TS frame
         frames_displaced: Displaced frames
+        connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
         (neighbor_idx, displacement, description) of most mobile group
     """
-    # Get neighbors of hub atom
-    cutoffs = natural_cutoffs(frame_ts, mult=1.2)
-    nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
-    nl.update(frame_ts)
-    
-    neighbors, _ = nl.get_neighbors(hub_atom)
+    # Get neighbors from connectivity
+    neighbors = list(connectivity.get(hub_atom, set()))
     symbols = frame_ts.get_chemical_symbols()
     
     if len(neighbors) == 0:
@@ -152,7 +150,7 @@ def identify_moving_group(
     # Try to identify the group type
     if neighbor_symbol == 'C':
         # Check if it's part of a methyl (C with 3H neighbors)
-        c_neighbors, _ = nl.get_neighbors(neighbor_idx)
+        c_neighbors = connectivity.get(neighbor_idx, set())
         h_count = sum(1 for n in c_neighbors if symbols[n] == 'H')
         if h_count == 3:
             description = "methyl group"
@@ -175,14 +173,18 @@ def identify_moving_group(
 # ROTATION CLASSIFICATION
 # ============================================================================
 
-def find_aromatic_rings(frame: Atoms, nl: NeighborList) -> List[List[int]]:
+def find_aromatic_rings(frame: Atoms, connectivity: Dict[int, set]) -> List[List[int]]:
     """
     Find aromatic 6-membered carbon rings using simple heuristic.
     
     Criteria:
     - 6-membered ring
     - All carbons
-    - Each carbon has exactly 3 neighbors (sp2 hybridization)
+    - Each carbon has 3-5 neighbors (sp2 + substituents)
+    
+    Args:
+        frame: ASE Atoms object
+        connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
         List of rings, where each ring is a list of atom indices
@@ -208,7 +210,7 @@ def find_aromatic_rings(frame: Atoms, nl: NeighborList) -> List[List[int]]:
             if len(path) > 6:
                 continue
             
-            neighbors, _ = nl.get_neighbors(current)
+            neighbors = list(connectivity.get(current, set()))
             for next_atom in neighbors:
                 # Check if we've completed a 6-membered ring
                 if next_atom == start_atom and len(path) == 6:
@@ -221,7 +223,7 @@ def find_aromatic_rings(frame: Atoms, nl: NeighborList) -> List[List[int]]:
                             if symbols[atom] != 'C':
                                 is_aromatic = False
                                 break
-                            atom_neighbors, _ = nl.get_neighbors(atom)
+                            atom_neighbors = connectivity.get(atom, set())
                             # Allow 3-5 neighbors (ring + 0-3 substituents)
                             if len(atom_neighbors) < 3 or len(atom_neighbors) > 5:
                                 is_aromatic = False
@@ -243,7 +245,8 @@ def find_aromatic_rings(frame: Atoms, nl: NeighborList) -> List[List[int]]:
 def classify_rotation_type(
     dihedral: Tuple[int, int, int, int],
     frame_ts: Atoms,
-    dihedral_change: float
+    dihedral_change: float,
+    connectivity: Dict[int, set]
 ) -> Dict[str, Any]:
     """
     Classify type of rotation based on chemical environment.
@@ -257,6 +260,7 @@ def classify_rotation_type(
         dihedral: (i, j, k, l) atom indices
         frame_ts: TS frame
         dihedral_change: Rotation magnitude (degrees)
+        connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
         Dict with rotation characterization
@@ -264,16 +268,12 @@ def classify_rotation_type(
     i, j, k, l = dihedral
     symbols = frame_ts.get_chemical_symbols()
     
-    # Get neighbors
-    cutoffs = natural_cutoffs(frame_ts, mult=1.2)
-    nl = NeighborList(cutoffs, self_interaction=False, bothways=True)
-    nl.update(frame_ts)
-    
-    neighbors_j, _ = nl.get_neighbors(j)
-    neighbors_k, _ = nl.get_neighbors(k)
+    # Get neighbors from connectivity
+    neighbors_j = list(connectivity.get(j, set()))
+    neighbors_k = list(connectivity.get(k, set()))
     
     # Find aromatic rings
-    aromatic_rings = find_aromatic_rings(frame_ts, nl)
+    aromatic_rings = find_aromatic_rings(frame_ts, connectivity)
     
     # Check if any dihedral atoms are in aromatic rings
     aromatic_atoms = []
@@ -311,7 +311,7 @@ def classify_rotation_type(
             'aromatic_atoms': aromatic_atoms
         }
     
-    def count_identical_neighbors(central: int, neighbors: np.ndarray, exclude: int) -> Tuple[str, int]:
+    def count_identical_neighbors(central: int, neighbors: List[int], exclude: int) -> Tuple[str, int]:
         """Count neighbors with same element, excluding the bond partner."""
         neighbor_symbols = [symbols[n] for n in neighbors if n != exclude]
         if not neighbor_symbols:
@@ -377,7 +377,8 @@ def classify_rotation_type(
 
 def analyze_rotations(
     dihedral_changes: Dict[Tuple[int, int, int, int], Tuple[float, float]],
-    frame_ts: Atoms
+    frame_ts: Atoms,
+    connectivity: Dict[int, set]
 ) -> Dict[Tuple[int, int, int, int], Dict[str, Any]]:
     """
     Analyze dihedrals and classify rotation types.
@@ -385,6 +386,7 @@ def analyze_rotations(
     Args:
         dihedral_changes: Dict of dihedrals with significant changes
         frame_ts: TS frame
+        connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
         Dict mapping dihedrals to rotation characterizations
@@ -392,7 +394,7 @@ def analyze_rotations(
     rotations = {}
     
     for dihedral, (max_change, initial_value) in dihedral_changes.items():
-        rotation_info = classify_rotation_type(dihedral, frame_ts, max_change)
+        rotation_info = classify_rotation_type(dihedral, frame_ts, max_change, connectivity)
         rotation_info['initial_value'] = initial_value
         rotations[dihedral] = rotation_info
     
@@ -464,31 +466,40 @@ def characterize_vib_mode(
         if inversion_result:
             hub_atom, element, hub_fraction = inversion_result
             
-            # Identify which group is moving
-            moving_group = identify_moving_group(hub_atom, frame_ts, frames_displaced)
+            # Identify which group is moving (using connectivity from internal_changes)
+            connectivity = internal_changes.get('connectivity', {})
+            moving_group = identify_moving_group(hub_atom, frame_ts, frames_displaced, connectivity)
             neighbor_idx, max_disp, group_description = moving_group
             
             result['mode_type'] = 'inversion'
-            result['description'] = f'{element} inversion with {group_description} motion'
+            
+            # Build description based on whether moving group was identified
+            if group_description == "unknown" or max_disp < 0.01:
+                result['description'] = f'{element} inversion'
+                logger.info(f"Characterized as {element} inversion (hub atom {hub_atom})")
+            else:
+                result['description'] = f'{element} inversion with {group_description} motion'
+                logger.info(
+                    f"Characterized as {element} inversion "
+                    f"(hub atom {hub_atom}, moving {group_description})"
+                )
+            
             result['primary_motion'] = 'inversion'
             result['inversion'] = {
                 'center_atom': hub_atom,
                 'center_symbol': element,
                 'hub_fraction': hub_fraction,
-                'moving_group': group_description,
-                'moving_atom': neighbor_idx,
+                'moving_group': group_description if group_description != "unknown" else None,
+                'moving_atom': neighbor_idx if group_description != "unknown" else None,
                 'max_displacement': max_disp,
                 'num_dihedrals': len(dihedral_changes)
             }
             
-            logger.info(
-                f"Characterized as {element} inversion "
-                f"(hub atom {hub_atom}, moving {group_description})"
-            )
             return result
         
         # No inversion detected - classify as rotation(s)
-        rotations = analyze_rotations(dihedral_changes, frame_ts)
+        connectivity = internal_changes.get('connectivity', {})
+        rotations = analyze_rotations(dihedral_changes, frame_ts, connectivity)
         result['rotations'] = rotations
         result['mode_type'] = 'rotation'
         

@@ -111,6 +111,8 @@ vib_analysis calculation.out --save-displacement
 ### Example 1: SN2 Reaction
 
 ![SN2 Animation](images/sn2.gif)
+    - visualisation using [v.2.0](https://github.com/briling/v) by [**Ksenia Briling @briling**](https://github.com/briling):  
+    - `v sn2.v000.xyz` press `f` and then `q` ; then ```bash convert -delay 5 -loop 0 sn2*xpm sn2.gif```
 
 ```bash
 vib_analysis examples/data/sn2.v000.xyz

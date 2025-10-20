@@ -86,7 +86,8 @@ def detect_inversion_hub(
         return None
     
     # Find atom with highest count
-    hub_atom = max(hub_counts, key=hub_counts.get)
+    hub_atom = max(hub_counts, key=lambda x: hub_counts[x])
+
     hub_count = hub_counts[hub_atom]
     hub_fraction = hub_count / len(dihedral_changes)
     

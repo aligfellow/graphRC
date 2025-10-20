@@ -9,7 +9,6 @@ graph-based analysis.
 import os
 import logging
 from typing import List, Optional, Dict, Any
-from ase import Atoms
 
 from . import config
 from .core import analyze_internal_displacements, read_xyz_trajectory
@@ -202,8 +201,6 @@ def run_vib_analysis(
         frames,
         ts_frame=ts_frame,
         bond_tolerance=bond_tolerance,
-        # angle_tolerance=angle_tolerance,
-        # dihedral_tolerance=dihedral_tolerance,
         bond_threshold=bond_threshold,
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,

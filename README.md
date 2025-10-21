@@ -618,7 +618,7 @@ All defaults are in `config.py` and can be overridden:
 
 **Detection Tolerances:**
 ```python
-BOND_TOLERANCE = 1.3        # vdW radii multiplier for TS
+BOND_TOLERANCE = 1.4        # vdW radii multiplier for TS
 ```
 
 **Significance Thresholds:**
@@ -638,7 +638,7 @@ ASCII_NEIGHBOR_SHELLS = 1   # Expansion around reactive center
 
 ### Displaced Structure Export
 
-Generate structures for IRC or optimization:
+Generate structures for tight optimization to either side of the TS:
 
 ```bash
 # Default: ±1 amplitude (~0.2)
@@ -650,7 +650,7 @@ vib_analysis input.xyz --save-displacement --displacement-scale 2
 # Creates: input_F.xyz (forward), input_R.xyz (reverse)
 ```
 
-Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8.
+Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8. The direction is arbitrary. 
 
 ### Custom Frame Selection
 
@@ -659,7 +659,7 @@ Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8.
 vib_analysis input.xyz --ts-frame 5
 ```
 
-By default, frames with maximum RMSD are selected automatically.
+By default, frame 1 is the TS, and frames with maximum RMSD are selected automatically.
 
 ---
 

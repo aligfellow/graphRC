@@ -60,7 +60,6 @@ pip install git+https://github.com/aligfellow/vib_analysis.git
 
 ### Dependencies
 **Required:**
-- `ase` - Atomic Simulation Environment
 - `numpy` - Numerical operations
 - `networkx` - Graph operations
 - `xyzgraph` - Molecular graph construction (does the graph analysis)
@@ -582,7 +581,7 @@ True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
 ```python
 {
     'trajectory': {
-        'frames': List[Atoms],      # ASE Atoms objects
+        'frames': List[Dict],        # List of frame dictionaries
         'frequencies': List[float],  # cm⁻¹ (None for XYZ)
         'trajectory_file': str       # Path to saved file
     },
@@ -696,7 +695,6 @@ Must contain ≥2 frames.
 
 ## Acknowledgments
 
-- Built using [ASE](https://ase-lib.org/) as a helper for trajectories
 - Uses [xyzgraph](https://github.com/aligfellow/xyzgraph) for graph construction and ascii printing
 - QM output parsing via [cclib](https://github.com/cclib/cclib)
 - Visualization examples with [v.2.0](https://github.com/briling/v) by Ksenia Briling

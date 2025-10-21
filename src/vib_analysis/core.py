@@ -1,23 +1,24 @@
 import numpy as np
-from ase import Atoms
 from itertools import combinations
 import os
 import logging
 from typing import List, Dict, Tuple, Any, Union
+from xyzgraph import DATA
 
 from . import config
+from .utils import calculate_distance, calculate_angle, calculate_dihedral
 
 logger = logging.getLogger("vib_analysis")
 
-def read_xyz_trajectory(file_path: str) -> List[Atoms]:
+def read_xyz_trajectory(file_path: str) -> List[Dict[str, Any]]:
     """
-    Read an XYZ trajectory file and return a list of ASE Atoms objects.
+    Read an XYZ trajectory file and return a list of frame dicts.
     
     Args:
         file_path: Path to XYZ trajectory file
         
     Returns:
-        List of ASE Atoms objects, one per frame
+        List of frame dicts with 'symbols' and 'positions' keys, one per frame
         
     Raises:
         FileNotFoundError: If file doesn't exist
@@ -41,7 +42,10 @@ def read_xyz_trajectory(file_path: str) -> List[Atoms]:
                 parts = f.readline().split()
                 symbols.append(parts[0])
                 coords.append([float(x) for x in parts[1:]])
-            frame = Atoms(symbols=symbols, positions=coords)
+            frame = {
+                'symbols': symbols,
+                'positions': np.array(coords)
+            }
             frames.append(frame)
     
     if len(frames) == 1:
@@ -55,9 +59,9 @@ def read_xyz_trajectory(file_path: str) -> List[Atoms]:
     return frames
 
 def build_internal_coordinates(
-    frame: Atoms, 
+    frame: Dict[str, Any], 
     bond_tolerance: float = config.BOND_TOLERANCE,
-) -> Dict[str, List[Tuple[int, ...]]]:
+) -> Dict[str, Any]:
     """
     Build internal coordinates (bonds, angles, dihedrals) using xyzgraph with hierarchical thresholds.
     
@@ -66,18 +70,19 @@ def build_internal_coordinates(
     - Tighter graph: more conservative connectivity for angles/dihedrals
     
     Args:
-        frame: ASE Atoms object
+        frame: Frame dict with 'symbols' and 'positions' keys
         bond_tolerance: Multiplier for bond detection (most flexible)
         
     Returns:
-        Dictionary with keys 'bonds', 'angles', 'dihedrals' containing lists of
-        atom index tuples
+        Dictionary with keys 'bonds', 'angles', 'dihedrals', 'connectivity'
     """
     from xyzgraph import build_graph
     
-    # Convert ASE Atoms to xyzgraph format
-    atoms_list = [(frame.get_chemical_symbols()[i], tuple(frame.positions[i])) 
-                  for i in range(len(frame))]
+    # Convert frame dict to xyzgraph format
+    symbols = frame['symbols']
+    positions = frame['positions']
+    atoms_list = [(symbols[i], tuple(positions[i])) 
+                  for i in range(len(symbols))]
 
     # xyzgraph base thresholds for flexible bond graph
     threshold_h_nm = 0.42 * bond_tolerance
@@ -146,21 +151,6 @@ def build_internal_coordinates(
         'connectivity': connectivity
     }
 
-def calculate_bond_length(frame: Atoms, i: int, j: int) -> float:
-    """Calculate bond length between atoms i and j."""
-    return round(float(frame.get_distance(i, j)), 3)
-
-
-def calculate_angle(frame: Atoms, i: int, j: int, k: int) -> float:
-    """Calculate angle between atoms i-j-k."""
-    return round(float(frame.get_angle(i, j, k, mic=True)), 3)
-
-
-def calculate_dihedral(frame: Atoms, i: int, j: int, k: int, l: int) -> float:
-    """Calculate dihedral angle for atoms i-j-k-l."""
-    return round(float(frame.get_dihedral(i, j, k, l, mic=True)), 3)
-
-
 def _has_significant_bond_change(
     bond: Tuple[int, int], 
     bond_changes: Dict[Tuple[int, int], Tuple[float, float]], 
@@ -205,9 +195,9 @@ def _bonds_are_stable(
 
 
 def calculate_internal_changes(
-    frames: List[Atoms],
-    ts_frame: Atoms,
-    internal_coords: Dict[str, List[Tuple[int, ...]]],
+    frames: List[Dict[str, Any]],
+    ts_frame: Dict[str, Any],
+    internal_coords: Dict[str, Any],
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
@@ -221,8 +211,8 @@ def calculate_internal_changes(
     to other structural changes.
     
     Args:
-        frames: List of trajectory frames (typically 2 most diverse)
-        ts_frame: Reference frame (typically transition state)
+        frames: List of frame dicts (typically 2 most diverse)
+        ts_frame: Reference frame dict (typically transition state)
         internal_coords: Dictionary with 'bonds', 'angles', 'dihedrals' lists
         bond_threshold: Minimum bond change to report (Å)
         angle_threshold: Minimum angle change to report (degrees)
@@ -237,10 +227,10 @@ def calculate_internal_changes(
     # Identify significant bond changes
     bond_changes = {}
     for i, j in internal_coords['bonds']:
-        distances = [calculate_bond_length(frame, i, j) for frame in frames]
+        distances = [calculate_distance(frame['positions'], i, j) for frame in frames]
         max_change = round(max(distances) - min(distances), 3)
         if abs(max_change) >= bond_threshold:
-            initial_length = calculate_bond_length(ts_frame, i, j)
+            initial_length = calculate_distance(ts_frame['positions'], i, j)
             bond_changes[(i, j)] = (max_change, initial_length)
     
     logger.debug(f"Found {len(bond_changes)} significant bond changes")
@@ -266,11 +256,11 @@ def calculate_internal_changes(
             continue
         
         # Calculate angle change
-        angles = [calculate_angle(frame, i, j, k) for frame in frames]
+        angles = [calculate_angle(frame['positions'], i, j, k) for frame in frames]
         max_change = round(max(angles) - min(angles), 3)
         
         if abs(max_change) >= angle_threshold:
-            initial_angle = calculate_angle(ts_frame, i, j, k)
+            initial_angle = calculate_angle(ts_frame['positions'], i, j, k)
             angle_atoms = set((i, j, k))
             
             # Classify as minor if involves atoms from bond changes
@@ -299,7 +289,7 @@ def calculate_internal_changes(
             continue
         
         # Calculate dihedral change (adjust for periodicity)
-        dihedrals = [calculate_dihedral(frame, i, j, k, l) for frame in frames]
+        dihedrals = [calculate_dihedral(frame['positions'], i, j, k, l) for frame in frames]
         max_change = round(
             max([abs((d - dihedrals[0] + 180) % 360 - 180) for d in dihedrals]), 
             3
@@ -309,23 +299,25 @@ def calculate_internal_changes(
             dihedral_changes[(i, j, k, l)] = max_change
     
     # Group dihedrals by rotation axis and select representative
-    masses = frames[0].get_masses()
+    # Use atomic numbers as proxy for mass (heavier atoms have higher atomic numbers)
+    symbols = frames[0]['symbols']
+    atomic_numbers = [DATA.s2n[sym] for sym in symbols]
     dihedral_groups = {}
     
     for (i, j, k, l), change in dihedral_changes.items():
         axis = tuple(sorted((j, k)))
-        total_mass = masses[i] + masses[j] + masses[k] + masses[l]
+        total_atomic_number = atomic_numbers[i] + atomic_numbers[j] + atomic_numbers[k] + atomic_numbers[l]
         
         if axis not in dihedral_groups:
             dihedral_groups[axis] = []
-        dihedral_groups[axis].append(((i, j, k, l), change, total_mass))
+        dihedral_groups[axis].append(((i, j, k, l), change, total_atomic_number))
     
     # Select most significant dihedral per axis
     unique_dihedrals = {}
     dependent_dihedrals = {}
     
     for axis, dihedrals_list in dihedral_groups.items():
-        # Sort by mass and change magnitude
+        # Sort by atomic number sum and change magnitude
         dihedrals_sorted = sorted(
             dihedrals_list, 
             key=lambda x: (x[2], x[1]), 
@@ -334,7 +326,7 @@ def calculate_internal_changes(
         dihedral, max_change, _ = dihedrals_sorted[0]
         
         if max_change >= dihedral_threshold:
-            initial_dihedral = calculate_dihedral(ts_frame, *dihedral)
+            initial_dihedral = calculate_dihedral(ts_frame['positions'], *dihedral)
             dihedral_atoms = set(dihedral)
             
             # Classify as dependent if involves atoms from bond changes
@@ -350,13 +342,13 @@ def calculate_internal_changes(
     
     return bond_changes, angle_changes, minor_angles, unique_dihedrals, dependent_dihedrals
 
-def compute_rmsd(frame1, frame2):
-    """Computes RMSD between two ASE frames."""
-    diff = frame1.get_positions() - frame2.get_positions()
+def compute_rmsd(frame1: Dict[str, Any], frame2: Dict[str, Any]) -> float:
+    """Computes RMSD between two frame dicts."""
+    diff = frame1['positions'] - frame2['positions']
     return np.sqrt(np.mean(np.sum(diff**2, axis=1)))
 
 
-def select_most_diverse_frames(frames, top_n=2):
+def select_most_diverse_frames(frames: List[Dict[str, Any]], top_n: int = 2) -> List[int]:
     """Select frames with largest RMSD from the TS frame (frame 0)."""
     # create an RMSD matrix between all frames and select the highest pair
     rmsd_matrix = np.zeros((len(frames), len(frames)))
@@ -379,7 +371,7 @@ def select_most_diverse_frames(frames, top_n=2):
     return selected_indices
 
 def analyze_internal_displacements(
-    xyz_file_or_frames: Union[str, List[Atoms]],
+    xyz_file_or_frames: Union[str, List[Dict[str, Any]]],
     bond_tolerance: float = config.BOND_TOLERANCE,
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
@@ -395,7 +387,7 @@ def analyze_internal_displacements(
     and tracks coordinate changes.
     
     Args:
-        xyz_file_or_frames: Path to XYZ trajectory file or list of ASE Atoms objects
+        xyz_file_or_frames: Path to XYZ trajectory file or list of frame dicts
         bond_tolerance: Multiplier for xyzgraph bond detection thresholds
         bond_threshold: Minimum bond change to report (Å)
         angle_threshold: Minimum angle change to report (degrees)
@@ -414,7 +406,7 @@ def analyze_internal_displacements(
             - atom_index_map: Dict mapping atom indices to symbols
             
     Raises:
-        TypeError: If xyz_file_or_frames is not str or list of Atoms
+        TypeError: If xyz_file_or_frames is not str or list of frame dicts
         FileNotFoundError: If file path doesn't exist
         ValueError: If trajectory has less than 2 frames
     """
@@ -426,7 +418,7 @@ def analyze_internal_displacements(
     else:
         raise TypeError(
             "xyz_file_or_frames must be a file path (str) or "
-            "list of ASE Atoms objects."
+            "list of frame dicts."
         )
 
     internal_coords = build_internal_coordinates(
@@ -450,7 +442,7 @@ def analyze_internal_displacements(
     )
 
     first_frame = frames[0]
-    symbols = first_frame.get_chemical_symbols()
+    symbols = first_frame['symbols']
     atom_index_map = {i: s for i, s in enumerate(symbols)}
 
     return {

@@ -2,16 +2,98 @@
 Utility functions for vibrational analysis.
 
 This module provides file I/O utilities for trajectories and displaced structures,
-as well as centralized logging configuration.
+geometry calculations, and centralized logging configuration.
 """
 
 import os
 import logging
-from typing import List, Optional, Tuple
-from ase import Atoms
-from ase.io import write
+import numpy as np
+from typing import List, Optional, Tuple, Dict, Any
 
 logger = logging.getLogger("vib_analysis")
+
+
+# Geometry calculation functions
+
+def calculate_distance(positions: np.ndarray, i: int, j: int) -> float:
+    """
+    Calculate distance between atoms i and j.
+    
+    Args:
+        positions: Nx3 array of atomic positions
+        i, j: Atom indices
+        
+    Returns:
+        Distance in Angstroms
+    """
+    return round(float(np.linalg.norm(positions[j] - positions[i])), 3)
+
+
+def calculate_angle(positions: np.ndarray, i: int, j: int, k: int) -> float:
+    """
+    Calculate angle between atoms i-j-k.
+    
+    Args:
+        positions: Nx3 array of atomic positions
+        i, j, k: Atom indices
+        
+    Returns:
+        Angle in degrees
+    """
+    v1 = positions[i] - positions[j]
+    v2 = positions[k] - positions[j]
+    
+    cos_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    cos_angle = np.clip(cos_angle, -1.0, 1.0)
+    angle = np.arccos(cos_angle) * 180.0 / np.pi
+    
+    return round(float(angle), 3)
+
+
+def calculate_dihedral(positions: np.ndarray, i: int, j: int, k: int, l: int) -> float:
+    """
+    Calculate dihedral angle for atoms i-j-k-l.
+    
+    Args:
+        positions: Nx3 array of atomic positions
+        i, j, k, l: Atom indices
+        
+    Returns:
+        Dihedral angle in degrees
+    """
+    b1 = positions[j] - positions[i]
+    b2 = positions[k] - positions[j]
+    b3 = positions[l] - positions[k]
+    
+    n1 = np.cross(b1, b2)
+    n2 = np.cross(b2, b3)
+    
+    m1 = np.cross(n1, b2 / np.linalg.norm(b2))
+    
+    x = np.dot(n1, n2)
+    y = np.dot(m1, n2)
+    
+    dihedral = np.arctan2(y, x) * 180.0 / np.pi
+    
+    return round(float(dihedral), 3)
+
+
+def write_xyz(filename: str, symbols: List[str], positions: np.ndarray, 
+              comment: str = "") -> None:
+    """
+    Write single structure to XYZ file.
+    
+    Args:
+        filename: Output file path
+        symbols: List of element symbols
+        positions: Nx3 array of atomic positions
+        comment: Comment line for XYZ file
+    """
+    with open(filename, 'w') as f:
+        f.write(f"{len(symbols)}\n")
+        f.write(f"{comment}\n")
+        for sym, pos in zip(symbols, positions):
+            f.write(f"{sym} {pos[0]:.6f} {pos[1]:.6f} {pos[2]:.6f}\n")
 
 
 def setup_logging(debug: bool = False) -> None:
@@ -57,7 +139,7 @@ def write_trajectory_file(trajectory_string: str, output_path: str) -> str:
 
 
 def write_displaced_structures(
-    frames: List[Atoms],
+    frames: List[Dict[str, Any]],
     prefix: str,
     indices: Optional[List[int]] = None,
     ts_frame: int = 0,
@@ -67,7 +149,7 @@ def write_displaced_structures(
     Write displaced structures (forward/reverse) as XYZ files.
     
     Args:
-        frames: List of ASE Atoms objects
+        frames: List of frame dicts with 'symbols' and 'positions' keys
         prefix: Output filename prefix
         indices: Optional list of frame indices [forward, reverse]
         ts_frame: TS frame index (used if indices is None)
@@ -115,7 +197,8 @@ def write_displaced_structures(
     f_idx = indices[0]
     f_path = f"{prefix}_F.xyz"
     if overwrite or not os.path.exists(f_path):
-        write(f_path, frames[f_idx], format='xyz')
+        frame = frames[f_idx]
+        write_xyz(f_path, frame['symbols'], frame['positions'])
     written.append(f_path)
     
     # Optional second index (_R)
@@ -124,14 +207,15 @@ def write_displaced_structures(
         if r_idx != f_idx:
             r_path = f"{prefix}_R.xyz"
             if overwrite or not os.path.exists(r_path):
-                write(r_path, frames[r_idx], format='xyz')
+                frame = frames[r_idx]
+                write_xyz(r_path, frame['symbols'], frame['positions'])
             written.append(r_path)
     
     return written
 
 
 def save_displacement_pair(
-    frames: List[Atoms],
+    frames: List[Dict[str, Any]],
     ts_frame: int,
     output_prefix: str,
     scale: int = 1,
@@ -144,7 +228,7 @@ def save_displacement_pair(
     Uses Python-style negative index wrapping (e.g., frame -1 is the last frame).
     
     Args:
-        frames: List of trajectory frames
+        frames: List of frame dicts with 'symbols' and 'positions' keys
         ts_frame: Index of TS frame
         output_prefix: Prefix for output files
         scale: Displacement scale (1-4, corresponding to amplitudes ~0.2-0.8)
@@ -204,5 +288,6 @@ def save_displacement_pair(
                 f"Saved displaced pair (±{scale}): "
                 f"{os.path.basename(paths[0])}, {os.path.basename(paths[1])}"
             )
+        return (paths[0], paths[1])
     
-    return tuple(paths) if len(paths) == 2 else None
+    return None

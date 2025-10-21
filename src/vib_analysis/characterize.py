@@ -10,7 +10,6 @@ No complex geometry calculations - just counting and simple logic.
 
 import numpy as np
 from typing import List, Dict, Tuple, Any, Optional
-from ase import Atoms
 import logging
 
 logger = logging.getLogger("vib_analysis")
@@ -22,29 +21,29 @@ logger = logging.getLogger("vib_analysis")
 
 def calculate_atom_displacement(
     atom_idx: int,
-    frame_ts: Atoms,
-    frames_displaced: List[Atoms]
+    frame_ts: Dict[str, Any],
+    frames_displaced: List[Dict[str, Any]]
 ) -> float:
     """
     Calculate average displacement magnitude for an atom.
     
     Args:
         atom_idx: Atom index
-        frame_ts: TS frame
-        frames_displaced: Displaced frames
+        frame_ts: TS frame dict
+        frames_displaced: Displaced frame dicts
     
     Returns:
         Average displacement magnitude in Angstroms
     """
-    pos_ts = frame_ts.get_positions()[atom_idx]
+    pos_ts = frame_ts['positions'][atom_idx]
     displacements = []
     
     for frame in frames_displaced:
-        pos = frame.get_positions()[atom_idx]
+        pos = frame['positions'][atom_idx]
         disp = np.linalg.norm(pos - pos_ts)
         displacements.append(disp)
     
-    return np.mean(displacements) if displacements else 0.0
+    return float(np.mean(displacements)) if displacements else 0.0
 
 
 # ============================================================================
@@ -112,8 +111,8 @@ def detect_inversion_hub(
 
 def identify_moving_group(
     hub_atom: int,
-    frame_ts: Atoms,
-    frames_displaced: List[Atoms],
+    frame_ts: Dict[str, Any],
+    frames_displaced: List[Dict[str, Any]],
     connectivity: Dict[int, set]
 ) -> Tuple[int, float, str]:
     """
@@ -121,8 +120,8 @@ def identify_moving_group(
     
     Args:
         hub_atom: Index of inverting atom
-        frame_ts: TS frame
-        frames_displaced: Displaced frames
+        frame_ts: TS frame dict
+        frames_displaced: Displaced frame dicts
         connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
@@ -130,7 +129,7 @@ def identify_moving_group(
     """
     # Get neighbors from connectivity
     neighbors = list(connectivity.get(hub_atom, set()))
-    symbols = frame_ts.get_chemical_symbols()
+    symbols = frame_ts['symbols']
     
     if len(neighbors) == 0:
         return (hub_atom, 0.0, "unknown")
@@ -173,7 +172,7 @@ def identify_moving_group(
 # ROTATION CLASSIFICATION
 # ============================================================================
 
-def find_aromatic_rings(frame: Atoms, connectivity: Dict[int, set]) -> List[List[int]]:
+def find_aromatic_rings(frame: Dict[str, Any], connectivity: Dict[int, set]) -> List[List[int]]:
     """
     Find aromatic 6-membered carbon rings using simple heuristic.
     
@@ -183,13 +182,13 @@ def find_aromatic_rings(frame: Atoms, connectivity: Dict[int, set]) -> List[List
     - Each carbon has 3-5 neighbors (sp2 + substituents)
     
     Args:
-        frame: ASE Atoms object
+        frame: Frame dict
         connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
         List of rings, where each ring is a list of atom indices
     """
-    symbols = frame.get_chemical_symbols()
+    symbols = frame['symbols']
     aromatic_rings = []
     
     # Find all 6-membered rings using BFS
@@ -197,7 +196,7 @@ def find_aromatic_rings(frame: Atoms, connectivity: Dict[int, set]) -> List[List
     
     visited_rings = set()
     
-    for start_atom in range(len(frame)):
+    for start_atom in range(len(symbols)):
         if symbols[start_atom] != 'C':
             continue
         
@@ -244,7 +243,7 @@ def find_aromatic_rings(frame: Atoms, connectivity: Dict[int, set]) -> List[List
 
 def classify_rotation_type(
     dihedral: Tuple[int, int, int, int],
-    frame_ts: Atoms,
+    frame_ts: Dict[str, Any],
     dihedral_change: float,
     connectivity: Dict[int, set]
 ) -> Dict[str, Any]:
@@ -258,7 +257,7 @@ def classify_rotation_type(
     
     Args:
         dihedral: (i, j, k, l) atom indices
-        frame_ts: TS frame
+        frame_ts: TS frame dict
         dihedral_change: Rotation magnitude (degrees)
         connectivity: Connectivity dictionary from build_internal_coordinates
     
@@ -266,7 +265,7 @@ def classify_rotation_type(
         Dict with rotation characterization
     """
     i, j, k, l = dihedral
-    symbols = frame_ts.get_chemical_symbols()
+    symbols = frame_ts['symbols']
     
     # Get neighbors from connectivity
     neighbors_j = list(connectivity.get(j, set()))
@@ -377,7 +376,7 @@ def classify_rotation_type(
 
 def analyze_rotations(
     dihedral_changes: Dict[Tuple[int, int, int, int], Tuple[float, float]],
-    frame_ts: Atoms,
+    frame_ts: Dict[str, Any],
     connectivity: Dict[int, set]
 ) -> Dict[Tuple[int, int, int, int], Dict[str, Any]]:
     """
@@ -385,7 +384,7 @@ def analyze_rotations(
     
     Args:
         dihedral_changes: Dict of dihedrals with significant changes
-        frame_ts: TS frame
+        frame_ts: TS frame dict
         connectivity: Connectivity dictionary from build_internal_coordinates
     
     Returns:
@@ -407,7 +406,7 @@ def analyze_rotations(
 
 def characterize_vib_mode(
     internal_changes: Dict[str, Any],
-    frames: List[Atoms],
+    frames: List[Dict[str, Any]],
     ts_frame_idx: int = 0
 ) -> Dict[str, Any]:
     """
@@ -420,7 +419,7 @@ def characterize_vib_mode(
     
     Args:
         internal_changes: Results from analyze_internal_displacements
-        frames: Full trajectory frames
+        frames: Full trajectory frame dicts
         ts_frame_idx: Index of TS frame
     
     Returns:
@@ -435,7 +434,7 @@ def characterize_vib_mode(
     # Get TS and displaced frames
     frame_ts = frames[ts_frame_idx]
     frames_displaced = [frames[i] for i in frame_indices]
-    symbols = frame_ts.get_chemical_symbols()
+    symbols = frame_ts['symbols']
     
     # Determine primary motion type
     has_bonds = len(bond_changes) > 0

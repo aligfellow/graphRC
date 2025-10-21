@@ -6,10 +6,9 @@ import os
 import subprocess
 import numpy as np
 import logging
-from ase import Atoms
-from ase.io import write
+from typing import List, Tuple, Optional, Dict, Any
+from xyzgraph import DATA
 import cclib
-from typing import List, Tuple, Optional
 
 logger = logging.getLogger("vib_analysis")
 
@@ -154,7 +153,7 @@ def parse_cclib_output(output_file, mode):
         raise ValueError(f"Mode index {mode} out of range. File has {num_modes} modes.")
     
     atom_numbers = data.atomnos
-    atom_symbols = [Atoms(numbers=[z]).get_chemical_symbols()[0] for z in atom_numbers]
+    atom_symbols = [DATA.n2s[z] for z in atom_numbers]
     eq_coords = data.atomcoords[-1]
     displacement = np.array(data.vibdisps[mode])
     freq = freqs[mode]
@@ -170,9 +169,9 @@ def parse_cclib_output(output_file, mode):
     return freqs, trj_data
 
 
-def parse_xyz_string_to_frames(trj_data_str: str) -> List[Atoms]:
+def parse_xyz_string_to_frames(trj_data_str: str) -> List[Dict[str, Any]]:
     """
-    Parse XYZ trajectory string into list of ASE Atoms objects.
+    Parse XYZ trajectory string into list of frame dicts.
     Returns list of frames.
     """
     lines = trj_data_str.strip().split('\n')
@@ -194,7 +193,10 @@ def parse_xyz_string_to_frames(trj_data_str: str) -> List[Atoms]:
             parts = lines[i + 2 + j].split()
             symbols.append(parts[0])
             coords.append([float(x) for x in parts[1:4]])
-        frame = Atoms(symbols=symbols, positions=coords)
+        frame = {
+            'symbols': symbols,
+            'positions': np.array(coords)
+        }
         frames.append(frame)
         i += 2 + num_atoms
     return frames

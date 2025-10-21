@@ -8,12 +8,12 @@ Simplified to use distance-based detection and xyzgraph charge handling.
 
 import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
-from ase import Atoms
 from xyzgraph import build_graph, graph_to_ascii, DATA
 import networkx as nx
 import logging
 
 from . import config
+from .utils import calculate_distance
 
 logger = logging.getLogger("vib_analysis")
 
@@ -21,18 +21,20 @@ logger = logging.getLogger("vib_analysis")
 # === GEOMETRY HELPERS ===
 # =====================================================================================
 
-def _atoms_to_xyz_format(frame: Atoms) -> List[Tuple[str, Tuple[float, float, float]]]:
-    """Convert ASE Atoms object to xyzgraph format: [(symbol, (x, y, z)), ...]"""
-    return [(atom.symbol, tuple(atom.position)) for atom in frame]
+def _atoms_to_xyz_format(frame: Dict[str, Any]) -> List[Tuple[str, Tuple[float, float, float]]]:
+    """Convert frame dict to xyzgraph format: [(symbol, (x, y, z)), ...]"""
+    symbols = frame['symbols']
+    positions = frame['positions']
+    return [(symbols[i], tuple(positions[i])) for i in range(len(symbols))]
 
 
-def _get_distance_changes(frame_ts: Atoms, frames_displaced: List[Atoms],
+def _get_distance_changes(frame_ts: Dict[str, Any], frames_displaced: List[Dict[str, Any]],
                           bond: Tuple[int, int]) -> Dict[str, float]:
     """Return direct distances for TS, displaced-1, displaced-2."""
     i, j = bond
-    d_ts = frame_ts.get_distance(i, j)
-    d_f1 = frames_displaced[0].get_distance(i, j)
-    d_f2 = frames_displaced[1].get_distance(i, j)
+    d_ts = calculate_distance(frame_ts['positions'], i, j)
+    d_f1 = calculate_distance(frames_displaced[0]['positions'], i, j)
+    d_f2 = calculate_distance(frames_displaced[1]['positions'], i, j)
     return {"ts": d_ts, "f1": d_f1, "f2": d_f2}
 
 
@@ -41,10 +43,10 @@ def _get_distance_changes(frame_ts: Atoms, frames_displaced: List[Atoms],
 # =====================================================================================
 
 def build_ts_graph(
-    frame_ts: Atoms,
+    frame_ts: Dict[str, Any],
     vib_bonds: List[Tuple[int, int]],
     vib_bond_info: Dict[Tuple[int, int], Tuple[float, float]],
-    frames_displaced: List[Atoms],
+    frames_displaced: List[Dict[str, Any]],
     distance_tolerance: float = config.DISTANCE_TOLERANCE,
     method: str = "cheminf",
     charge: int = 0,
@@ -113,9 +115,9 @@ def build_ts_graph(
 
 
 def build_displaced_graphs(
-    frame_ts: Atoms,
+    frame_ts: Dict[str, Any],
     vib_bonds: List[Tuple[int, int]],
-    frames_displaced: List[Atoms],
+    frames_displaced: List[Dict[str, Any]],
     method: str = "cheminf",
     charge: int = 0,
     multiplicity: Optional[int] = None
@@ -138,8 +140,8 @@ def build_displaced_graphs(
     unbonds_g2 = []
     
     for (i, j) in vib_bonds:
-        d1 = frames_displaced[0].get_distance(i, j)
-        d2 = frames_displaced[1].get_distance(i, j)
+        d1 = calculate_distance(frames_displaced[0]['positions'], i, j)
+        d2 = calculate_distance(frames_displaced[1]['positions'], i, j)
         
         if d1 < d2:  # Shorter in frame 1 → forming in g1, breaking in g2
             bonds_g1.append((i, j))
@@ -229,7 +231,7 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
 # =====================================================================================
 
 def analyze_displacement_graphs(
-        frames: List[Atoms],
+        frames: List[Dict[str, Any]],
         internal_changes: Dict[str, Any],
         atoms_of_interest: Optional[List[int]] = None,
         method: str = "cheminf",

@@ -81,7 +81,7 @@ def build_internal_coordinates(
 
     # xyzgraph base thresholds for flexible bond graph
     threshold_h_nm = 0.42 * bond_tolerance
-    threshold_nm_nm = 0.55 * bond_tolerance 
+    threshold_nm_nm = 0.5 * bond_tolerance 
     threshold_h_m = 0.45 * bond_tolerance 
     threshold_m_l = 0.65 # Keep metal-ligand as is - no scaling
     threshold_h_h = 0.40 * bond_tolerance 

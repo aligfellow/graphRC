@@ -11,7 +11,6 @@ readme = "README.md"
 requires-python = ">=3.6" 
 dependencies = [
     "numpy",
-    "ase",
     "cclib",
     "rdkit", 
     "networkx",

@@ -436,7 +436,7 @@ vib_analysis <input_file> [options]
 > vib_analysis -h
 
 usage: vib_analysis [-h] [--mode MODE] [--ts-frame TS_FRAME] [--bond-tolerance BOND_TOLERANCE] [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD]
-                    [--dihedral-threshold DIHEDRAL_THRESHOLD] [--bond-stability BOND_STABILITY] [--all] [--graph] [--method {cheminf,xtb}] [--charge CHARGE]
+                    [--dihedral-threshold DIHEDRAL_THRESHOLD] [--coupled-motion-filter COUPLED_MOTION_FILTER] [--all] [--graph] [--method {cheminf,xtb}] [--charge CHARGE]
                     [--multiplicity MULTIPLICITY] [--distance-tolerance DISTANCE_TOLERANCE] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
                     [--save-displacement] [--displacement-scale DISPLACEMENT_SCALE] [--no-save] [--orca-path ORCA_PATH] [--debug]
                     input
@@ -461,7 +461,7 @@ vibrational analysis parameters:
                         Threshold for significant angle changes in degrees (default: 10.0)
   --dihedral-threshold DIHEDRAL_THRESHOLD
                         Threshold for significant dihedral changes in degrees (default: 20.0)
-  --bond-stability BOND_STABILITY
+  --coupled-motion-filter COUPLED_MOTION_FILTER
                         Bond stability threshold for filtering coupled changes in Å (default: 0.2, advanced)
   --all, -a             Report all changes including minor ones
 
@@ -523,7 +523,7 @@ vib_analysis input.xyz -g --independent-graphs
 
 ### Independent Graph Building
 
-By default, molecular graphs are built from TS geometry with bonding guidend by the bond changes across the trajectory. The `--independent-graphs` flag enables a more rigorous approach where each displaced structure's graph is built independently using its actual geometry:
+By default, molecular graphs are built from TS geometry with bonding guided by the bond changes across the trajectory. The `--independent-graphs` flag enables a more rigorous approach where each displaced structure's graph is built independently using its actual geometry:
 
 ```bash
 # Standard approach (TS-centric, default)
@@ -661,7 +661,7 @@ BOND_TOLERANCE = 1.4        # vdW radii multiplier for TS
 BOND_THRESHOLD = 0.4        # Minimum Δ (Å)
 ANGLE_THRESHOLD = 10.0      # Minimum Δ (degrees)
 DIHEDRAL_THRESHOLD = 20.0   # Minimum Δ (degrees)
-BOND_STABILITY_THRESHOLD = 0.2  # For filtering coupled changes
+COUPLED_MOTION_FILTER = 0.2 # For secondary filtering of coupled changes
 ```
 
 **Graph Analysis:**

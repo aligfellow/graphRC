@@ -201,7 +201,7 @@ def calculate_internal_changes(
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
-    bond_stability_threshold: float = config.BOND_STABILITY_THRESHOLD
+    coupled_motion_filter: float = config.COUPLED_MOTION_FILTER
 ) -> Tuple[Dict, Dict, Dict, Dict, Dict]:
     """
     Track changes in internal coordinates across trajectory.
@@ -217,7 +217,7 @@ def calculate_internal_changes(
         bond_threshold: Minimum bond change to report (Å)
         angle_threshold: Minimum angle change to report (degrees)
         dihedral_threshold: Minimum dihedral change to report (degrees)
-        bond_stability_threshold: Threshold for filtering coupled angle/dihedral changes (Å)
+        coupled_motion_filter: Threshold for filtering coupled angle/dihedral changes (Å)
         
     Returns:
         Tuple of (bond_changes, angle_changes, minor_angles, 
@@ -251,8 +251,8 @@ def calculate_internal_changes(
         if any(bond in bond_changes for bond in bonds_in_angle):
             continue
         
-        # Skip if constituent bonds are not stable
-        if not _bonds_are_stable(bonds_in_angle, bond_changes, bond_stability_threshold):
+        # Skip if bonds are not stable (some motion but not enough for reporting a bond change)
+        if not _bonds_are_stable(bonds_in_angle, bond_changes, coupled_motion_filter):
             continue
         
         # Calculate angle change
@@ -284,8 +284,8 @@ def calculate_internal_changes(
         if any(set(bond).issubset({i, j, k, l}) for bond in bond_changes):
             continue
         
-        # Skip if constituent bonds are not stable
-        if not _bonds_are_stable(bonds_in_dihedral, bond_changes, bond_stability_threshold):
+        # Skip if bonds are not stable (some motion but not enough for reporting a bond change)
+        if not _bonds_are_stable(bonds_in_dihedral, bond_changes, coupled_motion_filter):
             continue
         
         # Calculate dihedral change (adjust for periodicity)
@@ -376,7 +376,7 @@ def analyze_internal_displacements(
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
-    bond_stability_threshold: float = config.BOND_STABILITY_THRESHOLD,
+    coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
     ts_frame: int = config.DEFAULT_TS_FRAME,
 ) -> Dict[str, Any]:
     """
@@ -392,7 +392,7 @@ def analyze_internal_displacements(
         bond_threshold: Minimum bond change to report (Å)
         angle_threshold: Minimum angle change to report (degrees)
         dihedral_threshold: Minimum dihedral change to report (degrees)
-        bond_stability_threshold: Threshold for filtering coupled angle/dihedral changes (Å)
+        coupled_motion_filter: Threshold for filtering coupled angle/dihedral changes (Å)
         ts_frame: Index of transition state frame to use as reference
         
     Returns:
@@ -438,7 +438,7 @@ def analyze_internal_displacements(
         bond_threshold=bond_threshold,
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,
-        bond_stability_threshold=bond_stability_threshold,
+        coupled_motion_filter=coupled_motion_filter,
     )
 
     first_frame = frames[0]

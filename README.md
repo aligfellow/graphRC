@@ -523,7 +523,7 @@ vib_analysis input.xyz -g --independent-graphs
 
 ### Independent Graph Building
 
-By default, molecular graphs are built from TS geometry with bonding guidend by the bond changes across the trajectory. The `--independent-graphs` flag enables a more rigorous approach where each displaced structure's graph is built independently using its actual geometry:
+By default, molecular graphs are built from TS geometry with bonding guided by the bond changes across the trajectory. The `--independent-graphs` flag enables a more rigorous approach where each displaced structure's graph is built independently using its actual geometry:
 
 ```bash
 # Standard approach (TS-centric, default)

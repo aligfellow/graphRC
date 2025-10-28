@@ -119,6 +119,7 @@ def run_vib_analysis(
     charge: int = 0,
     multiplicity: Optional[int] = None,
     distance_tolerance: float = config.DISTANCE_TOLERANCE,
+    independent_graphs: bool = False,
     ascii_scale: float = config.ASCII_SCALE,
     ascii_include_h: bool = config.ASCII_INCLUDE_H,
     ascii_neighbor_shells: int = config.ASCII_NEIGHBOR_SHELLS,
@@ -152,6 +153,7 @@ def run_vib_analysis(
         charge: Molecular charge for graph building
         multiplicity: Spin multiplicity (auto-detected if None)
         distance_tolerance: Tolerance for bond formation/breaking detection (Å)
+        independent_graphs: Build graphs from actual displaced geometries rather than TS geometry
         ascii_scale: Scale factor for ASCII molecular rendering
         ascii_include_h: Include hydrogens in ASCII rendering
         ascii_neighbor_shells: Neighbor shells around transformation core
@@ -269,6 +271,11 @@ def run_vib_analysis(
         )
         if print_output:
             print("Running graph-based analysis...")
+            # Display graph building mode
+            if independent_graphs:
+                print("Graph building mode: Independent (from actual displaced geometries)")
+            else:
+                print("Graph building mode: TS-centric (with guided bonding)")
         
         # Extract atoms of interest from characterization for ASCII highlighting
         atoms_of_interest = set()
@@ -302,6 +309,7 @@ def run_vib_analysis(
             charge=charge,
             multiplicity=multiplicity,
             distance_tolerance=distance_tolerance,
+            independent_graphs=independent_graphs,
             ascii_scale=ascii_scale,
             ascii_include_h=ascii_include_h,
             ascii_neighbor_shells=ascii_neighbor_shells,

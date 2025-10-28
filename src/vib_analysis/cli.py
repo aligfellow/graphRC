@@ -54,6 +54,8 @@ def main():
                             help='Spin multiplicity (auto-detected if not specified)')
     graph_group.add_argument('--distance-tolerance', type=float, default=config.DISTANCE_TOLERANCE,
                             help=f'Tolerance for bond formation/breaking (default: {config.DISTANCE_TOLERANCE} Å)')
+    graph_group.add_argument('--independent-graphs', '-ig', action='store_true',
+                            help='Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use with IRC or QRC displaced trajectories)')
     
     # ASCII visualization
     ascii_group = parser.add_argument_group('ASCII rendering options')
@@ -103,6 +105,7 @@ def main():
             charge=args.charge,
             multiplicity=args.multiplicity,
             distance_tolerance=args.distance_tolerance,
+            independent_graphs=args.independent_graphs,
             ascii_scale=args.ascii_scale,
             ascii_include_h=args.show_h,
             ascii_neighbor_shells=args.ascii_shells,

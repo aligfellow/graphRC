@@ -474,6 +474,8 @@ graph analysis parameters:
                         Spin multiplicity (auto-detected if not specified)
   --distance-tolerance DISTANCE_TOLERANCE
                         Tolerance for bond formation/breaking (default: 0.2 Å)
+  --independent-graphs, -ig
+                        Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use with IRC or QRC displaced trajectories)
 
 ASCII rendering options:
   --ascii-scale, -as ASCII_SCALE
@@ -514,7 +516,32 @@ vib_analysis input.xyz -g --ascii-shells 2
 
 # Set molecular charge
 vib_analysis input.xyz -g --charge -1
+
+# Use independent graph building (more rigorous for IRC/QRC trajectories)
+vib_analysis input.xyz -g --independent-graphs
 ```
+
+### Independent Graph Building
+
+By default, molecular graphs are built from TS geometry with bonding guidend by the bond changes across the trajectory. The `--independent-graphs` flag enables a more rigorous approach where each displaced structure's graph is built independently using its actual geometry:
+
+```bash
+# Standard approach (TS-centric, default)
+vib_analysis irc_trajectory.xyz -g
+
+# Independent approach (builds from actual geometries)
+vib_analysis irc_trajectory.xyz -g --independent-graphs
+```
+
+**When to use `--independent-graphs`:**
+- Analyzing IRC or QRC trajectories with actual minima geometries
+- Formal validation of connectivity changes
+- Comparing results between methods
+- Ensuring no bias from TS geometry
+
+**Differences:**
+- **Default (TS-centric)**: All graphs built from TS geometry with bond/unbond guidance based on distance changes
+- **Independent**: Each graph built from its own actual geometry; `xyzgraph` determines connectivity from coordinates alone
 
 ### Output Control
 
@@ -556,6 +583,7 @@ from vib_analysis import run_vib_analysis
 
 orca_out = 'data/bimp.v000.xyz'
 
+# Basic analysis
 results = run_vib_analysis(
         input_file=orca_out,
     )
@@ -566,6 +594,14 @@ print(vib)
 theoretical_bond_changes = [(11,12), (10,14)]
 if all(bond in vib['bond_changes'] for bond in theoretical_bond_changes):
     print(f'True: All theoretical bond changes {theoretical_bond_changes} found in results.')
+
+# With graph analysis and independent graphs (for IRC/QRC trajectories)
+results_ig = run_vib_analysis(
+        input_file='irc_trajectory.xyz',
+        enable_graph=True,
+        independent_graphs=True,  # Build from actual geometries
+        print_output=True
+    )
 ```
 Outputs:
 ```python

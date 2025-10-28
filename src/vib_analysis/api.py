@@ -112,7 +112,7 @@ def run_vib_analysis(
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
-    bond_stability_threshold: float = config.BOND_STABILITY_THRESHOLD,
+    coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
     # Graph analysis parameters (includes mode characterization)
     enable_graph: bool = False,
     graph_method: str = "cheminf",
@@ -144,7 +144,7 @@ def run_vib_analysis(
         bond_threshold: Threshold for significant bond changes (Å)
         angle_threshold: Threshold for significant angle changes (degrees)
         dihedral_threshold: Threshold for significant dihedral changes (degrees)
-        bond_stability_threshold: Threshold for filtering coupled angle/dihedral changes (Å)
+        coupled_motion_filter: Threshold for filtering coupled angle/dihedral changes (Å)
         
         enable_characterization: Enable mode characterization (rotations, inversions)
 
@@ -206,7 +206,7 @@ def run_vib_analysis(
         bond_threshold=bond_threshold,
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,
-        bond_stability_threshold=bond_stability_threshold,
+        coupled_motion_filter=coupled_motion_filter,
     )
     
     # Check if anything was detected - if not, try with relaxed thresholds
@@ -231,7 +231,7 @@ def run_vib_analysis(
             bond_threshold=bond_threshold * 0.5,
             angle_threshold=angle_threshold * 0.5,
             dihedral_threshold=dihedral_threshold * 0.5,
-            bond_stability_threshold=bond_stability_threshold * 0.5,
+            coupled_motion_filter=coupled_motion_filter * 0.5,
         )
         
         # Add metadata about relaxed thresholds

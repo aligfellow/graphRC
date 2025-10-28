@@ -36,8 +36,8 @@ def main():
                           help=f'Threshold for significant angle changes in degrees (default: {config.ANGLE_THRESHOLD})')
     vib_group.add_argument('--dihedral-threshold', type=float, default=config.DIHEDRAL_THRESHOLD,
                           help=f'Threshold for significant dihedral changes in degrees (default: {config.DIHEDRAL_THRESHOLD})')
-    vib_group.add_argument('--bond-stability', type=float, default=config.BOND_STABILITY_THRESHOLD,
-                          help=f'Bond stability threshold for filtering coupled changes in Å (default: {config.BOND_STABILITY_THRESHOLD}, advanced)')
+    vib_group.add_argument('--coupled-motion-filter', type=float, default=config.COUPLED_MOTION_FILTER,
+                          help=f'Coupled motion filter for filtering coupled changes in Å (default: {config.COUPLED_MOTION_FILTER}, advanced)')
     vib_group.add_argument('--all', '-a', action='store_true',
                           help='Report all changes including minor ones')
     
@@ -98,7 +98,7 @@ def main():
             bond_threshold=args.bond_threshold,
             angle_threshold=args.angle_threshold,
             dihedral_threshold=args.dihedral_threshold,
-            bond_stability_threshold=args.bond_stability,
+            coupled_motion_filter=args.coupled_motion_filter,
             # Graph parameters (includes mode characterization)
             enable_graph=args.graph,
             graph_method=args.method,

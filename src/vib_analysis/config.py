@@ -7,19 +7,18 @@ All default values can be overridden by passing parameters to analysis functions
 # ============================================================================
 # Coordinate Detection Tolerances
 # ============================================================================
-# These multipliers scale covalent radii for bond detection
 BOND_TOLERANCE = 1.4        # Multiplier for bond detection
 
 # ============================================================================
 # Significance Thresholds
 # ============================================================================
 # Minimum changes to report as significant structural changes
-BOND_THRESHOLD = 0.4        # Minimum bond change (Ångströms)
+BOND_THRESHOLD = 0.4        # Minimum bond change (Å)
 ANGLE_THRESHOLD = 10.0      # Minimum angle change (degrees)
 DIHEDRAL_THRESHOLD = 20.0   # Minimum dihedral change (degrees)
 
-# Internal filtering threshold (not typically user-facing)
-BOND_STABILITY_THRESHOLD = 0.2  # For filtering coupled angle/dihedral changes
+# Internal filtering threshold
+COUPLED_MOTION_FILTER  = 0.2  # For filtering coupled angle/dihedral changes
 
 # ============================================================================
 # Graph Analysis Parameters

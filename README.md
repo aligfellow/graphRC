@@ -668,6 +668,7 @@ BOND_THRESHOLD = 0.4        # Minimum Δ (Å)
 ANGLE_THRESHOLD = 10.0      # Minimum Δ (degrees)
 DIHEDRAL_THRESHOLD = 20.0   # Minimum Δ (degrees)
 COUPLED_MOTION_FILTER = 0.2 # For secondary filtering of coupled changes
+COUPLED_PROTON_THRESHOLD = 0.15 # Low threshold for coupled H movements (Å) 
 ```
 
 **Graph Analysis:**
@@ -681,21 +682,12 @@ ASCII_NEIGHBOR_SHELLS = 1   # Expansion around reactive center
 
 For systems involving proton transfers or H₂ coordination, a reduced threshold can detect coupled H movements that fall below the standard bond threshold allowing for chemically relevant but asynchronous bond changes:
 
-**Configuration:**
-```python
-COUPLED_PROTON_THRESHOLD = 0.15 # Low threshold for coupled H movements (Å) 
-```
-
 **How it works:**
 - When an H atom is involved in a detected bond change, all other bonds involving that H are checked with the reduced threshold (0.15 Å instead of 0.4 Å)
-- Captures coupled proton transfers, H₂ dissociation/coordination, and bridging hydride rearrangements
 
 **CLI Usage:**
 ```bash
-# Default behavior (enabled, 0.15 Å)
-vib_analysis input.xyz
-
-# Custom threshold
+# Custom threshold (enabled by default)
 vib_analysis input.xyz --coupled-proton-threshold 0.20
 
 # Disable feature
@@ -751,6 +743,7 @@ python examples/threshold_tuning.py
 - **100%** F1 score (balance of precision and recall)
 - **100%** detection rate (all expected bonds found)
 - **0%** false positive rate
+- **full accuracy of *all* vibrational bonds across *all* 15 transition states**  
 
 Detailed validation results are written to `examples/threshold_optimization.txt` for full transparency.
 

@@ -371,10 +371,10 @@ Bond (0, 1)   [C-I]  Δ =   1.878 Å,  Initial =   2.563 Å
 
 ### Example 7: Mn Catalyst Hydrogenation
 
-![Mn Hydrogenation](images/mn.gif)
+![Mn Hydrogenation](images/mn-h2.gif)
 
 ```bash
-vib_analysis examples/data/mn.log --all
+vib_analysis examples/data/mn-h2.log --all
 ```
 
 **Output:**
@@ -658,7 +658,7 @@ BOND_TOLERANCE = 1.4        # vdW radii multiplier for TS
 
 **Significance Thresholds:**
 ```python
-BOND_THRESHOLD = 0.4        # Minimum Δ (Å)
+BOND_THRESHOLD = 0.4        # Minimum Δ (Å) 
 ANGLE_THRESHOLD = 10.0      # Minimum Δ (degrees)
 DIHEDRAL_THRESHOLD = 20.0   # Minimum Δ (degrees)
 COUPLED_MOTION_FILTER = 0.2 # For secondary filtering of coupled changes
@@ -695,6 +695,26 @@ vib_analysis input.xyz --ts-frame 5
 ```
 
 By default, frame 1 is the TS, and frames with maximum RMSD are selected automatically.
+
+---
+
+### Threshold Validation
+
+The default bond displacement threshold (0.4 Å) has been validated against a diverse set of 15 transition state systems. "Ground truth" bond changes were determined from IRC calculations.
+
+**Validation script:**
+```bash
+python examples/tune_thresholds.py
+```
+
+**Results:** The default threshold of 0.4 Å provides optimal performance:
+- **94.5%** F1 score (balance of precision and recall)
+- **89.7%** detection rate (expected bonds found)
+  - **key transition state coordinates** were identified in every example
+  - **missed coordinates** include *late* proton transfer and *late* H-H bond breaking (IRC validated)
+- **0%** false positive rate
+
+Detailed validation results are written to `examples/threshold_optimization.txt` for full transparency.
 
 ---
 

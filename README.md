@@ -384,6 +384,10 @@ vib_analysis examples/data/mn-h2.log --all
                               VIB_ANALYSIS
 ================================================================================
 
+Parsing mn-h2.log with cclib...
+Saved trajectory to mn-h2.v000.xyz
+Loaded 20 frames from trajectory
+
 Analyzed Mode 0: -748.48 cm⁻¹ (imaginary)
 
 First 5 non-zero vibrational frequencies:
@@ -401,11 +405,10 @@ First 5 non-zero vibrational frequencies:
 Bond (5, 65)   [N-H]   Δ =   1.776 Å,  Initial =   1.319 Å
 Bond (65, 66)  [H-O]   Δ =   1.665 Å,  Initial =   1.203 Å
 Bond (64, 66)  [H-O]   Δ =   0.920 Å,  Initial =   1.711 Å
-Bond (1, 65)   [Mn-H]  Δ =   0.875 Å,  Initial =   2.591 Å
 Bond (1, 64)   [Mn-H]  Δ =   0.649 Å,  Initial =   1.898 Å
+Bond (63, 64)  [H-H]   Δ =   0.244 Å,  Initial =   0.859 Å
 
 ============================= Minor Angle Changes ==============================
-Angle (64, 63, 1)  [H-H-Mn]  Δ =  45.388 °,  Initial =  88.897 °
 Angle (5, 1, 63)   [N-Mn-H]  Δ =  16.471 °,  Initial =  96.799 °
 Angle (61, 1, 63)  [C-Mn-H]  Δ =  15.528 °,  Initial =  81.202 °
 Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
@@ -413,14 +416,14 @@ Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
 Note: These angles depend on other changes and may not be significant alone.
 
 ============================ Minor Dihedral Changes ============================
-Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial = 283.248 °
+Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial =  76.752 °
 
 Note: These dihedrals depend on other changes and may not be significant alone.
 
 ================================================================================
 ```
 
-**Interpretation:** Hydrogenation mechanism involving multiple N-H, H-O, and Mn-H bond changes. Note the handling of metal-ligand interactions.
+**Interpretation:** Hydrogenation mechanism involving multiple N-H, H-O, and Mn-H bond changes. Note the handling of metal-ligand interactions and the lower magnitude H-H bond detection due to a secondary H threshold.
 
 ---
 

@@ -201,7 +201,8 @@ def calculate_internal_changes(
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
-    coupled_motion_filter: float = config.COUPLED_MOTION_FILTER
+    coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
+    coupled_proton_threshold: Union[float, bool] = config.COUPLED_PROTON_THRESHOLD
 ) -> Tuple[Dict, Dict, Dict, Dict, Dict]:
     """
     Track changes in internal coordinates across trajectory.
@@ -224,6 +225,9 @@ def calculate_internal_changes(
                   unique_dihedrals, dependent_dihedrals)
         Each is a dict mapping coordinate tuple to (max_change, initial_value)
     """
+    # Get symbols from ts_frame for element identification
+    symbols = ts_frame['symbols']
+    
     # Identify significant bond changes
     bond_changes = {}
     for i, j in internal_coords['bonds']:
@@ -234,6 +238,40 @@ def calculate_internal_changes(
             bond_changes[(i, j)] = (max_change, initial_length)
     
     logger.debug(f"Found {len(bond_changes)} significant bond changes")
+    
+    # Coupled proton transfer detection (for any H involved in detected bond changes)
+    coupled_proton_bonds = set()  # Track which bonds were detected via coupled threshold
+    if coupled_proton_threshold is not False:
+        # Find ALL H atoms involved in any detected bond change
+        h_atoms_in_changes = set()
+        for (i, j) in bond_changes:
+            if symbols[i] == 'H':
+                h_atoms_in_changes.add(i)
+            if symbols[j] == 'H':
+                h_atoms_in_changes.add(j)
+        
+        if h_atoms_in_changes:
+            logger.debug(f"Searching for coupled proton transfers for {len(h_atoms_in_changes)} H atoms")
+        
+        # Search for additional bonds involving these H atoms with reduced threshold
+        for h_idx in h_atoms_in_changes:
+            for i, j in internal_coords['bonds']:
+                if h_idx not in (i, j):
+                    continue  # Skip bonds not involving this H
+                
+                sorted_bond = tuple(sorted((i, j)))
+                if sorted_bond in bond_changes:
+                    continue  # Already detected
+                
+                # Check with reduced threshold
+                distances = [calculate_distance(frame['positions'], i, j) for frame in frames]
+                max_change = round(max(distances) - min(distances), 3)
+                if abs(max_change) >= coupled_proton_threshold:
+                    initial_length = calculate_distance(ts_frame['positions'], i, j)
+                    bond_changes[sorted_bond] = (max_change, initial_length)  
+                    coupled_proton_bonds.add(sorted_bond)  # Track separately
+                    logger.debug(f"Coupled proton detection: bond {sorted_bond} (Δ={max_change} Å)")
+                    # break     # commented out to allow other checks of connectivity
     
     # Track atoms involved in bond changes
     changed_atoms = set()
@@ -340,7 +378,10 @@ def calculate_internal_changes(
         f"{len(dependent_dihedrals)} dependent dihedrals"
     )
     
-    return bond_changes, angle_changes, minor_angles, unique_dihedrals, dependent_dihedrals
+    if coupled_proton_bonds:
+        logger.debug(f"Found {len(coupled_proton_bonds)} bonds via coupled proton threshold")
+    
+    return bond_changes, angle_changes, minor_angles, unique_dihedrals, dependent_dihedrals, coupled_proton_bonds
 
 def compute_rmsd(frame1: Dict[str, Any], frame2: Dict[str, Any]) -> float:
     """Computes RMSD between two frame dicts."""
@@ -377,6 +418,7 @@ def analyze_internal_displacements(
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
     coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
+    coupled_proton_threshold: Union[float, bool] = config.COUPLED_PROTON_THRESHOLD,
     ts_frame: int = config.DEFAULT_TS_FRAME,
 ) -> Dict[str, Any]:
     """
@@ -431,7 +473,7 @@ def analyze_internal_displacements(
     
     logger.info(f"Selected frames {selected_indices} for analysis")
 
-    bond_changes, angle_changes, minor_angles, unique_dihedrals, dependent_dihedrals = calculate_internal_changes(
+    bond_changes, angle_changes, minor_angles, unique_dihedrals, dependent_dihedrals, coupled_proton_bonds = calculate_internal_changes(
         frames=selected_frames,
         ts_frame=frames[ts_frame],
         internal_coords=internal_coords,
@@ -439,6 +481,7 @@ def analyze_internal_displacements(
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,
         coupled_motion_filter=coupled_motion_filter,
+        coupled_proton_threshold=coupled_proton_threshold,
     )
 
     first_frame = frames[0]
@@ -454,4 +497,5 @@ def analyze_internal_displacements(
         "frame_indices": selected_indices,
         "atom_index_map": atom_index_map,
         "connectivity": internal_coords['connectivity'],
+        "coupled_proton_bonds": coupled_proton_bonds,
     }

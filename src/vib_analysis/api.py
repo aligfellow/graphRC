@@ -113,6 +113,7 @@ def run_vib_analysis(
     angle_threshold: float = config.ANGLE_THRESHOLD,
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
     coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
+    coupled_proton_threshold = config.COUPLED_PROTON_THRESHOLD,
     # Graph analysis parameters (includes mode characterization)
     enable_graph: bool = False,
     graph_method: str = "cheminf",
@@ -207,6 +208,7 @@ def run_vib_analysis(
         angle_threshold=angle_threshold,
         dihedral_threshold=dihedral_threshold,
         coupled_motion_filter=coupled_motion_filter,
+        coupled_proton_threshold=coupled_proton_threshold,
     )
     
     # Check if anything was detected - if not, try with relaxed thresholds
@@ -232,6 +234,7 @@ def run_vib_analysis(
             angle_threshold=angle_threshold * 0.5,
             dihedral_threshold=dihedral_threshold * 0.5,
             coupled_motion_filter=coupled_motion_filter * 0.5,
+            coupled_proton_threshold=coupled_proton_threshold,
         )
         
         # Add metadata about relaxed thresholds

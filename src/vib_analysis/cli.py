@@ -38,6 +38,8 @@ def main():
                           help=f'Threshold for significant dihedral changes in degrees (default: {config.DIHEDRAL_THRESHOLD})')
     vib_group.add_argument('--coupled-motion-filter', type=float, default=config.COUPLED_MOTION_FILTER,
                           help=f'Coupled motion filter for filtering coupled changes in Å (default: {config.COUPLED_MOTION_FILTER}, advanced)')
+    vib_group.add_argument('--coupled-proton-threshold', type=str, default=str(config.COUPLED_PROTON_THRESHOLD),
+                          help=f'Reduced threshold for coupled proton transfers in Å (default: {config.COUPLED_PROTON_THRESHOLD}, use "false" to disable)')
     vib_group.add_argument('--all', '-a', action='store_true',
                           help='Report all changes including minor ones')
     
@@ -87,6 +89,17 @@ def main():
         print(f"Error: Input file '{args.input}' not found.", file=sys.stderr)
         sys.exit(1)
     
+    # Parse coupled_proton_threshold (convert string to float or False)
+    coupled_proton_threshold = args.coupled_proton_threshold
+    if coupled_proton_threshold.lower() == 'false':
+        coupled_proton_threshold = False
+    else:
+        try:
+            coupled_proton_threshold = float(coupled_proton_threshold)
+        except ValueError:
+            print(f"Error: --coupled-proton-threshold must be a number or 'false', got '{coupled_proton_threshold}'", file=sys.stderr)
+            sys.exit(1)
+    
     # Run analysis
     try:
         results = run_vib_analysis(
@@ -99,6 +112,7 @@ def main():
             angle_threshold=args.angle_threshold,
             dihedral_threshold=args.dihedral_threshold,
             coupled_motion_filter=args.coupled_motion_filter,
+            coupled_proton_threshold=coupled_proton_threshold,
             # Graph parameters (includes mode characterization)
             enable_graph=args.graph,
             graph_method=args.method,

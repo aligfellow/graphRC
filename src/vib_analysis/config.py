@@ -17,6 +17,9 @@ BOND_THRESHOLD = 0.4        # Minimum bond change (Å)
 ANGLE_THRESHOLD = 10.0      # Minimum angle change (degrees)
 DIHEDRAL_THRESHOLD = 20.0   # Minimum dihedral change (degrees)
 
+# Coupled proton transfer detection
+COUPLED_PROTON_THRESHOLD = 0.15 # Low threshold for coupled H movements (Å)
+
 # Internal filtering threshold
 COUPLED_MOTION_FILTER  = 0.2  # For filtering coupled angle/dihedral changes
 

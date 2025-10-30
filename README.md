@@ -92,6 +92,7 @@ vib_analysis calculation.out --save-displacement
 **Core Analysis:**
 - Selects relevant frames for comparison
 - Identifies which bonds/angles/dihedrals change
+- Detects coupled proton transfers with reduced threshold for H movements
 - Compares graphs to detect transformations
 - Filters and classifies changes
 
@@ -463,6 +464,8 @@ vibrational analysis parameters:
                         Threshold for significant dihedral changes in degrees (default: 20.0)
   --coupled-motion-filter COUPLED_MOTION_FILTER
                         Bond stability threshold for filtering coupled changes in Å (default: 0.2, advanced)
+  --coupled-proton-threshold COUPLED_PROTON_THRESHOLD
+                        Reduced threshold for coupled proton transfers in Å (default: 0.15, use "false" to disable)
   --all, -a             Report all changes including minor ones
 
 graph analysis parameters:
@@ -671,6 +674,40 @@ ASCII_SCALE = 2.5           # Rendering scale
 ASCII_NEIGHBOR_SHELLS = 1   # Expansion around reactive center
 ```
 
+### Coupled Proton Transfer Detection
+
+For systems involving proton transfers or H₂ coordination, a reduced threshold can detect coupled H movements that fall below the standard bond threshold allowing for chemically relevant but asynchronous bond changes:
+
+**Configuration:**
+```python
+COUPLED_PROTON_THRESHOLD = 0.15 # Low threshold for coupled H movements (Å) 
+```
+
+**How it works:**
+- When an H atom is involved in a detected bond change, all other bonds involving that H are checked with the reduced threshold (0.15 Å instead of 0.4 Å)
+- Captures coupled proton transfers, H₂ dissociation/coordination, and bridging hydride rearrangements
+
+**CLI Usage:**
+```bash
+# Default behavior (enabled, 0.15 Å)
+vib_analysis input.xyz
+
+# Custom threshold
+vib_analysis input.xyz --coupled-proton-threshold 0.20
+
+# Disable feature
+vib_analysis input.xyz --coupled-proton-threshold false
+```
+
+**Python API:**
+```python
+# Custom threshold
+results = run_vib_analysis('input.xyz', coupled_proton_threshold=0.20)
+
+# Disabled
+results = run_vib_analysis('input.xyz', coupled_proton_threshold=False)
+```
+
 ### Displaced Structure Export
 
 Generate structures for tight optimization to either side of the TS:
@@ -704,14 +741,12 @@ The default bond displacement threshold (0.4 Å) has been validated against a di
 
 **Validation script:**
 ```bash
-python examples/tune_thresholds.py
+python examples/threshold_tuning.py
 ```
 
-**Results:** The default threshold of 0.4 Å provides optimal performance:
-- **94.5%** F1 score (balance of precision and recall)
-- **89.7%** detection rate (expected bonds found)
-  - **key transition state coordinates** were identified in every example
-  - **missed coordinates** include *late* proton transfer and *late* H-H bond breaking (IRC validated)
+**Results:** The default threshold of 0.4 Å combined with coupled proton detection provides optimal performance:
+- **100%** F1 score (balance of precision and recall)
+- **100%** detection rate (all expected bonds found)
 - **0%** false positive rate
 
 Detailed validation results are written to `examples/threshold_optimization.txt` for full transparency.
@@ -723,7 +758,7 @@ Detailed validation results are written to `examples/threshold_optimization.txt`
 **Integrated threshold adjustments**
 - Thresholds are reduced by 50% if there is no initial detection of interal coordinate changes
 - This is flagged in the output and these may be less reliable
-- Allows for the detection of changed coordinated in very low magnitude modes (**i.e.** hindered aryl rotation)
+- Allows for the detection of changed coordinated in very low magnitude modes (*i.e.* hindered aryl rotation)
 
 **Use as indicators only!** Always cross-validate with:
 - IRC

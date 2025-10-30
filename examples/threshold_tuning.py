@@ -313,11 +313,9 @@ def run_threshold_validation(output_file: str = None):
             
             status = " ← current" if threshold == config.BOND_THRESHOLD else ""
             f.write(f"{threshold:<12.2f} {detection:>5.1f}%          {false_pos:>5.1f}%          {f1:>5.1f}%{status}\n")
-    
-    print(" " * 60)  # Clear progress line
-    
+       
     # Print summary to console
-    print("\n" + "="*70)
+    print("="*70)
     print("SUMMARY")
     print("="*70)
     print("Metric Explanation:")

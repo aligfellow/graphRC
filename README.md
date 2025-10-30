@@ -92,6 +92,7 @@ vib_analysis calculation.out --save-displacement
 **Core Analysis:**
 - Selects relevant frames for comparison
 - Identifies which bonds/angles/dihedrals change
+- Detects coupled proton transfers with reduced threshold for H movements
 - Compares graphs to detect transformations
 - Filters and classifies changes
 
@@ -383,6 +384,10 @@ vib_analysis examples/data/mn-h2.log --all
                               VIB_ANALYSIS
 ================================================================================
 
+Parsing mn-h2.log with cclib...
+Saved trajectory to mn-h2.v000.xyz
+Loaded 20 frames from trajectory
+
 Analyzed Mode 0: -748.48 cm⁻¹ (imaginary)
 
 First 5 non-zero vibrational frequencies:
@@ -400,11 +405,10 @@ First 5 non-zero vibrational frequencies:
 Bond (5, 65)   [N-H]   Δ =   1.776 Å,  Initial =   1.319 Å
 Bond (65, 66)  [H-O]   Δ =   1.665 Å,  Initial =   1.203 Å
 Bond (64, 66)  [H-O]   Δ =   0.920 Å,  Initial =   1.711 Å
-Bond (1, 65)   [Mn-H]  Δ =   0.875 Å,  Initial =   2.591 Å
 Bond (1, 64)   [Mn-H]  Δ =   0.649 Å,  Initial =   1.898 Å
+Bond (63, 64)  [H-H]   Δ =   0.244 Å,  Initial =   0.859 Å
 
 ============================= Minor Angle Changes ==============================
-Angle (64, 63, 1)  [H-H-Mn]  Δ =  45.388 °,  Initial =  88.897 °
 Angle (5, 1, 63)   [N-Mn-H]  Δ =  16.471 °,  Initial =  96.799 °
 Angle (61, 1, 63)  [C-Mn-H]  Δ =  15.528 °,  Initial =  81.202 °
 Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
@@ -412,14 +416,14 @@ Angle (2, 1, 63)   [P-Mn-H]  Δ =  13.032 °,  Initial = 171.266 °
 Note: These angles depend on other changes and may not be significant alone.
 
 ============================ Minor Dihedral Changes ============================
-Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial = 283.248 °
+Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial =  76.752 °
 
 Note: These dihedrals depend on other changes and may not be significant alone.
 
 ================================================================================
 ```
 
-**Interpretation:** Hydrogenation mechanism involving multiple N-H, H-O, and Mn-H bond changes. Note the handling of metal-ligand interactions.
+**Interpretation:** Hydrogenation mechanism involving multiple N-H, H-O, and Mn-H bond changes. Note the handling of metal-ligand interactions and the lower magnitude H-H bond detection due to a secondary H threshold.
 
 ---
 
@@ -463,6 +467,8 @@ vibrational analysis parameters:
                         Threshold for significant dihedral changes in degrees (default: 20.0)
   --coupled-motion-filter COUPLED_MOTION_FILTER
                         Bond stability threshold for filtering coupled changes in Å (default: 0.2, advanced)
+  --coupled-proton-threshold COUPLED_PROTON_THRESHOLD
+                        Reduced threshold for coupled proton transfers in Å (default: 0.15, use "false" to disable)
   --all, -a             Report all changes including minor ones
 
 graph analysis parameters:
@@ -671,6 +677,40 @@ ASCII_SCALE = 2.5           # Rendering scale
 ASCII_NEIGHBOR_SHELLS = 1   # Expansion around reactive center
 ```
 
+### Coupled Proton Transfer Detection
+
+For systems involving proton transfers or H₂ coordination, a reduced threshold can detect coupled H movements that fall below the standard bond threshold allowing for chemically relevant but asynchronous bond changes:
+
+**Configuration:**
+```python
+COUPLED_PROTON_THRESHOLD = 0.15 # Low threshold for coupled H movements (Å) 
+```
+
+**How it works:**
+- When an H atom is involved in a detected bond change, all other bonds involving that H are checked with the reduced threshold (0.15 Å instead of 0.4 Å)
+- Captures coupled proton transfers, H₂ dissociation/coordination, and bridging hydride rearrangements
+
+**CLI Usage:**
+```bash
+# Default behavior (enabled, 0.15 Å)
+vib_analysis input.xyz
+
+# Custom threshold
+vib_analysis input.xyz --coupled-proton-threshold 0.20
+
+# Disable feature
+vib_analysis input.xyz --coupled-proton-threshold false
+```
+
+**Python API:**
+```python
+# Custom threshold
+results = run_vib_analysis('input.xyz', coupled_proton_threshold=0.20)
+
+# Disabled
+results = run_vib_analysis('input.xyz', coupled_proton_threshold=False)
+```
+
 ### Displaced Structure Export
 
 Generate structures for tight optimization to either side of the TS:
@@ -704,14 +744,12 @@ The default bond displacement threshold (0.4 Å) has been validated against a di
 
 **Validation script:**
 ```bash
-python examples/tune_thresholds.py
+python examples/threshold_tuning.py
 ```
 
-**Results:** The default threshold of 0.4 Å provides optimal performance:
-- **94.5%** F1 score (balance of precision and recall)
-- **89.7%** detection rate (expected bonds found)
-  - **key transition state coordinates** were identified in every example
-  - **missed coordinates** include *late* proton transfer and *late* H-H bond breaking (IRC validated)
+**Results:** The default threshold of 0.4 Å combined with coupled proton detection provides optimal performance:
+- **100%** F1 score (balance of precision and recall)
+- **100%** detection rate (all expected bonds found)
 - **0%** false positive rate
 
 Detailed validation results are written to `examples/threshold_optimization.txt` for full transparency.
@@ -723,7 +761,7 @@ Detailed validation results are written to `examples/threshold_optimization.txt`
 **Integrated threshold adjustments**
 - Thresholds are reduced by 50% if there is no initial detection of interal coordinate changes
 - This is flagged in the output and these may be less reliable
-- Allows for the detection of changed coordinated in very low magnitude modes (**i.e.** hindered aryl rotation)
+- Allows for the detection of changed coordinated in very low magnitude modes (*i.e.* hindered aryl rotation)
 
 **Use as indicators only!** Always cross-validate with:
 - IRC

@@ -1,0 +1,485 @@
+======================================================================
+BOND THRESHOLD VALIDATION
+Generated: 2025-10-30 18:11:43
+======================================================================
+
+Test systems: 15
+Systems: ambh, atrop, bimp, cpa, cycl, dihedral, mn-h2, mn-hy, ru-co-nuc, ru-co, sn2, sn2_large, spiro-ts1, spiro-ts2, thia-ma
+
+======================================================================
+Testing bond_threshold = 0.10
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✗ bimp: Bonds: Expected=2, Detected=7, Missing=0, Extra=5
+      Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
+      Detected Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (10, 14) [C-C], (11, 12) [O-C], (12, 13) [C-C], (13, 14) [C-C]
+      Extra Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (12, 13) [C-C], (13, 14) [C-C]
+  ✗ cpa: Bonds: Expected=3, Detected=5, Missing=0, Extra=2
+      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+      Detected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 71) [C-C], (70, 74) [C-C], (73, 74) [C-C]
+      Extra Bonds: (70, 71) [C-C], (73, 74) [C-C]
+  ✗ cycl: Bonds: Expected=1, Detected=4, Missing=0, Extra=3
+      Expected Bonds: (2, 6) [C-N]
+      Detected Bonds: (1, 6) [C-N], (2, 6) [C-N], (2, 20) [C-O], (2, 41) [C-N]
+      Extra Bonds: (1, 6) [C-N], (2, 20) [C-O], (2, 41) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✓ mn-h2: Bonds=5, Dihedrals=0
+      Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+  ✗ mn-hy: Bonds: Expected=2, Detected=6, Missing=0, Extra=4
+      Expected Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Detected Bonds: (1, 67) [Mn-H], (66, 90) [H-O], (67, 77) [H-C], (77, 78) [C-C], (77, 79) [C-C], (77, 90) [C-O]
+      Extra Bonds: (66, 90) [H-O], (77, 78) [C-C], (77, 79) [C-C], (77, 90) [C-O]
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✓ ru-co: Bonds=4, Dihedrals=0
+      Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✗ sn2_large: Bonds: Expected=2, Detected=4, Missing=0, Extra=2
+      Expected Bonds: (0, 1) [C-I], (0, 21) [C-N]
+      Detected Bonds: (0, 1) [C-I], (0, 21) [C-N], (20, 21) [C-N], (21, 22) [N-C]
+      Extra Bonds: (20, 21) [C-N], (21, 22) [N-C]
+  ✗ spiro-ts1: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (14, 15) [C-N]
+      Detected Bonds: (13, 14) [O-C], (14, 15) [C-N]
+      Extra Bonds: (13, 14) [O-C]
+  ✗ spiro-ts2: Bonds: Expected=1, Detected=4, Missing=0, Extra=3
+      Expected Bonds: (13, 14) [O-C]
+      Detected Bonds: (12, 13) [C-O], (12, 23) [C-C], (13, 14) [O-C], (14, 23) [C-C]
+      Extra Bonds: (12, 13) [C-O], (12, 23) [C-C], (14, 23) [C-C]
+  ✗ thia-ma: Bonds: Expected=1, Detected=7, Missing=0, Extra=6
+      Expected Bonds: (35, 47) [C-S]
+      Detected Bonds: (12, 40) [S-O], (14, 41) [N-C], (33, 35) [C-C], (33, 41) [C-C], (35, 47) [C-S], (47, 48) [S-C], (48, 64) [C-N]
+      Extra Bonds: (12, 40) [S-O], (14, 41) [N-C], (33, 35) [C-C], (33, 41) [C-C], (47, 48) [S-C], (48, 64) [C-N]
+
+  Statistics:
+    Detection Rate: 29/29 bonds (100.0%)
+    False Positives: 26 bonds (47.3%)
+    F1 Score: 69.0%
+    Perfect Detection: 7/15 systems (46.7%)
+
+======================================================================
+Testing bond_threshold = 0.15
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✗ bimp: Bonds: Expected=2, Detected=7, Missing=0, Extra=5
+      Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
+      Detected Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (10, 14) [C-C], (11, 12) [O-C], (12, 13) [C-C], (13, 14) [C-C]
+      Extra Bonds: (0, 83) [O-H], (1, 10) [C-C], (10, 11) [C-O], (12, 13) [C-C], (13, 14) [C-C]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+  ✗ cycl: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (2, 6) [C-N]
+      Detected Bonds: (2, 6) [C-N], (2, 41) [C-N]
+      Extra Bonds: (2, 41) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✓ mn-h2: Bonds=5, Dihedrals=0
+      Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+  ✗ mn-hy: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Detected Bonds: (1, 67) [Mn-H], (66, 90) [H-O], (67, 77) [H-C]
+      Extra Bonds: (66, 90) [H-O]
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✓ ru-co: Bonds=4, Dihedrals=0
+      Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✗ sn2_large: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (0, 1) [C-I], (0, 21) [C-N]
+      Detected Bonds: (0, 1) [C-I], (0, 21) [C-N], (20, 21) [C-N]
+      Extra Bonds: (20, 21) [C-N]
+  ✗ spiro-ts1: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (14, 15) [C-N]
+      Detected Bonds: (13, 14) [O-C], (14, 15) [C-N]
+      Extra Bonds: (13, 14) [O-C]
+  ✗ spiro-ts2: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (13, 14) [O-C]
+      Detected Bonds: (12, 23) [C-C], (13, 14) [O-C]
+      Extra Bonds: (12, 23) [C-C]
+  ✗ thia-ma: Bonds: Expected=1, Detected=5, Missing=0, Extra=4
+      Expected Bonds: (35, 47) [C-S]
+      Detected Bonds: (14, 41) [N-C], (33, 35) [C-C], (33, 41) [C-C], (35, 47) [C-S], (47, 48) [S-C]
+      Extra Bonds: (14, 41) [N-C], (33, 35) [C-C], (33, 41) [C-C], (47, 48) [S-C]
+
+  Statistics:
+    Detection Rate: 29/29 bonds (100.0%)
+    False Positives: 14 bonds (32.6%)
+    F1 Score: 80.6%
+    Perfect Detection: 8/15 systems (53.3%)
+
+======================================================================
+Testing bond_threshold = 0.20
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✗ bimp: Bonds: Expected=2, Detected=5, Missing=0, Extra=3
+      Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
+      Detected Bonds: (1, 10) [C-C], (10, 11) [C-O], (10, 14) [C-C], (11, 12) [O-C], (12, 13) [C-C]
+      Extra Bonds: (1, 10) [C-C], (10, 11) [C-O], (12, 13) [C-C]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+  ✗ cycl: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (2, 6) [C-N]
+      Detected Bonds: (2, 6) [C-N], (2, 41) [C-N]
+      Extra Bonds: (2, 41) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✓ mn-h2: Bonds=5, Dihedrals=0
+      Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+  ✗ mn-hy: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Detected Bonds: (1, 67) [Mn-H], (66, 90) [H-O], (67, 77) [H-C]
+      Extra Bonds: (66, 90) [H-O]
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=3, Missing=1, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (64, 66) [C-H]
+      Missing Bonds: (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✗ sn2_large: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (0, 1) [C-I], (0, 21) [C-N]
+      Detected Bonds: (0, 1) [C-I], (0, 21) [C-N], (20, 21) [C-N]
+      Extra Bonds: (20, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✗ thia-ma: Bonds: Expected=1, Detected=4, Missing=0, Extra=3
+      Expected Bonds: (35, 47) [C-S]
+      Detected Bonds: (33, 35) [C-C], (33, 41) [C-C], (35, 47) [C-S], (47, 48) [S-C]
+      Extra Bonds: (33, 35) [C-C], (33, 41) [C-C], (47, 48) [S-C]
+
+  Statistics:
+    Detection Rate: 28/29 bonds (96.6%)
+    False Positives: 9 bonds (24.3%)
+    F1 Score: 84.8%
+    Perfect Detection: 9/15 systems (60.0%)
+
+======================================================================
+Testing bond_threshold = 0.25
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✗ bimp: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
+      Detected Bonds: (10, 11) [C-O], (10, 14) [C-C], (11, 12) [O-C]
+      Extra Bonds: (10, 11) [C-O]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+  ✓ cycl: Bonds=1, Dihedrals=0
+      Bonds: (2, 6) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✗ mn-h2: Bonds: Expected=5, Detected=4, Missing=1, Extra=0
+      Expected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+      Detected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (64, 66) [H-O], (65, 66) [H-O]
+      Missing Bonds: (63, 64) [H-H]
+  ✗ mn-hy: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Detected Bonds: (1, 67) [Mn-H], (66, 90) [H-O], (67, 77) [H-C]
+      Extra Bonds: (66, 90) [H-O]
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=3, Missing=1, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (64, 66) [C-H]
+      Missing Bonds: (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✓ sn2_large: Bonds=2, Dihedrals=0
+      Bonds: (0, 1) [C-I], (0, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✗ thia-ma: Bonds: Expected=1, Detected=3, Missing=0, Extra=2
+      Expected Bonds: (35, 47) [C-S]
+      Detected Bonds: (33, 35) [C-C], (35, 47) [C-S], (47, 48) [S-C]
+      Extra Bonds: (33, 35) [C-C], (47, 48) [S-C]
+
+  Statistics:
+    Detection Rate: 27/29 bonds (93.1%)
+    False Positives: 4 bonds (12.9%)
+    F1 Score: 90.0%
+    Perfect Detection: 10/15 systems (66.7%)
+
+======================================================================
+Testing bond_threshold = 0.30
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✓ bimp: Bonds=2, Dihedrals=0
+      Bonds: (10, 14) [C-C], (11, 12) [O-C]
+  ✓ cpa: Bonds=3, Dihedrals=0
+      Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+  ✓ cycl: Bonds=1, Dihedrals=0
+      Bonds: (2, 6) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✗ mn-h2: Bonds: Expected=5, Detected=4, Missing=1, Extra=0
+      Expected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+      Detected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (64, 66) [H-O], (65, 66) [H-O]
+      Missing Bonds: (63, 64) [H-H]
+  ✗ mn-hy: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Detected Bonds: (1, 67) [Mn-H], (66, 90) [H-O], (67, 77) [H-C]
+      Extra Bonds: (66, 90) [H-O]
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=3, Missing=1, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (64, 66) [C-H]
+      Missing Bonds: (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✓ sn2_large: Bonds=2, Dihedrals=0
+      Bonds: (0, 1) [C-I], (0, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✗ thia-ma: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (35, 47) [C-S]
+      Detected Bonds: (33, 35) [C-C], (35, 47) [C-S]
+      Extra Bonds: (33, 35) [C-C]
+
+  Statistics:
+    Detection Rate: 27/29 bonds (93.1%)
+    False Positives: 2 bonds (6.9%)
+    F1 Score: 93.1%
+    Perfect Detection: 11/15 systems (73.3%)
+
+======================================================================
+Testing bond_threshold = 0.35
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✓ bimp: Bonds=2, Dihedrals=0
+      Bonds: (10, 14) [C-C], (11, 12) [O-C]
+  ✗ cpa: Bonds: Expected=3, Detected=2, Missing=1, Extra=0
+      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+      Detected Bonds: (23, 35) [O-H], (70, 74) [C-C]
+      Missing Bonds: (35, 75) [H-O]
+  ✓ cycl: Bonds=1, Dihedrals=0
+      Bonds: (2, 6) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✗ mn-h2: Bonds: Expected=5, Detected=4, Missing=1, Extra=0
+      Expected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+      Detected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (64, 66) [H-O], (65, 66) [H-O]
+      Missing Bonds: (63, 64) [H-H]
+  ✗ mn-hy: Bonds: Expected=2, Detected=3, Missing=0, Extra=1
+      Expected Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Detected Bonds: (1, 67) [Mn-H], (66, 90) [H-O], (67, 77) [H-C]
+      Extra Bonds: (66, 90) [H-O]
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=3, Missing=1, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (64, 66) [C-H]
+      Missing Bonds: (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✓ sn2_large: Bonds=2, Dihedrals=0
+      Bonds: (0, 1) [C-I], (0, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✗ thia-ma: Bonds: Expected=1, Detected=2, Missing=0, Extra=1
+      Expected Bonds: (35, 47) [C-S]
+      Detected Bonds: (33, 35) [C-C], (35, 47) [C-S]
+      Extra Bonds: (33, 35) [C-C]
+
+  Statistics:
+    Detection Rate: 26/29 bonds (89.7%)
+    False Positives: 2 bonds (7.1%)
+    F1 Score: 91.2%
+    Perfect Detection: 10/15 systems (66.7%)
+
+======================================================================
+Testing bond_threshold = 0.40
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✓ bimp: Bonds=2, Dihedrals=0
+      Bonds: (10, 14) [C-C], (11, 12) [O-C]
+  ✗ cpa: Bonds: Expected=3, Detected=2, Missing=1, Extra=0
+      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+      Detected Bonds: (23, 35) [O-H], (70, 74) [C-C]
+      Missing Bonds: (35, 75) [H-O]
+  ✓ cycl: Bonds=1, Dihedrals=0
+      Bonds: (2, 6) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✗ mn-h2: Bonds: Expected=5, Detected=4, Missing=1, Extra=0
+      Expected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+      Detected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (64, 66) [H-O], (65, 66) [H-O]
+      Missing Bonds: (63, 64) [H-H]
+  ✓ mn-hy: Bonds=2, Dihedrals=3
+      Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Dihedrals: (7, 0, 19, 21), (13, 0, 17, 19), (17, 0, 13, 7)
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=3, Missing=1, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (64, 66) [C-H]
+      Missing Bonds: (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✓ sn2_large: Bonds=2, Dihedrals=0
+      Bonds: (0, 1) [C-I], (0, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✓ thia-ma: Bonds=1, Dihedrals=2
+      Bonds: (35, 47) [C-S]
+      Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
+
+  Statistics:
+    Detection Rate: 26/29 bonds (89.7%)
+    False Positives: 0 bonds (0.0%)
+    F1 Score: 94.5%
+    Perfect Detection: 12/15 systems (80.0%)
+
+======================================================================
+Testing bond_threshold = 0.45
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✗ bimp: Bonds: Expected=2, Detected=1, Missing=1, Extra=0
+      Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
+      Detected Bonds: (11, 12) [O-C]
+      Missing Bonds: (10, 14) [C-C]
+  ✗ cpa: Bonds: Expected=3, Detected=1, Missing=2, Extra=0
+      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+      Detected Bonds: (70, 74) [C-C]
+      Missing Bonds: (23, 35) [O-H], (35, 75) [H-O]
+  ✓ cycl: Bonds=1, Dihedrals=0
+      Bonds: (2, 6) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✗ mn-h2: Bonds: Expected=5, Detected=4, Missing=1, Extra=0
+      Expected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+      Detected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (64, 66) [H-O], (65, 66) [H-O]
+      Missing Bonds: (63, 64) [H-H]
+  ✓ mn-hy: Bonds=2, Dihedrals=3
+      Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Dihedrals: (7, 0, 19, 21), (13, 0, 17, 19), (17, 0, 13, 7)
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=3, Missing=1, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (64, 66) [C-H]
+      Missing Bonds: (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✓ sn2_large: Bonds=2, Dihedrals=0
+      Bonds: (0, 1) [C-I], (0, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✓ thia-ma: Bonds=1, Dihedrals=2
+      Bonds: (35, 47) [C-S]
+      Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
+
+  Statistics:
+    Detection Rate: 24/29 bonds (82.8%)
+    False Positives: 0 bonds (0.0%)
+    F1 Score: 90.6%
+    Perfect Detection: 11/15 systems (73.3%)
+
+======================================================================
+Testing bond_threshold = 0.50
+======================================================================
+  ✓ ambh: Bonds=2, Dihedrals=0
+      Bonds: (2, 11) [C-H], (11, 18) [H-N]
+  ✓ atrop: Bonds=0, Dihedrals=2
+      Dihedrals: (1, 5, 6, 7), (6, 7, 25, 27)
+  ✗ bimp: Bonds: Expected=2, Detected=1, Missing=1, Extra=0
+      Expected Bonds: (10, 14) [C-C], (11, 12) [O-C]
+      Detected Bonds: (11, 12) [O-C]
+      Missing Bonds: (10, 14) [C-C]
+  ✗ cpa: Bonds: Expected=3, Detected=1, Missing=2, Extra=0
+      Expected Bonds: (23, 35) [O-H], (35, 75) [H-O], (70, 74) [C-C]
+      Detected Bonds: (70, 74) [C-C]
+      Missing Bonds: (23, 35) [O-H], (35, 75) [H-O]
+  ✓ cycl: Bonds=1, Dihedrals=0
+      Bonds: (2, 6) [C-N]
+  ✓ dihedral: Bonds=0, Dihedrals=1
+      Dihedrals: (6, 0, 3, 7)
+  ✗ mn-h2: Bonds: Expected=5, Detected=4, Missing=1, Extra=0
+      Expected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (63, 64) [H-H], (64, 66) [H-O], (65, 66) [H-O]
+      Detected Bonds: (1, 64) [Mn-H], (5, 65) [N-H], (64, 66) [H-O], (65, 66) [H-O]
+      Missing Bonds: (63, 64) [H-H]
+  ✓ mn-hy: Bonds=2, Dihedrals=3
+      Bonds: (1, 67) [Mn-H], (67, 77) [H-C]
+      Dihedrals: (7, 0, 19, 21), (13, 0, 17, 19), (17, 0, 13, 7)
+  ✓ ru-co-nuc: Bonds=3, Dihedrals=0
+      Bonds: (3, 66) [N-H], (64, 65) [C-N], (65, 66) [N-H]
+  ✗ ru-co: Bonds: Expected=4, Detected=2, Missing=2, Extra=0
+      Expected Bonds: (0, 63) [Ru-O], (0, 64) [Ru-C], (3, 66) [N-H], (64, 66) [C-H]
+      Detected Bonds: (0, 63) [Ru-O], (64, 66) [C-H]
+      Missing Bonds: (0, 64) [Ru-C], (3, 66) [N-H]
+  ✓ sn2: Bonds=2, Dihedrals=0
+      Bonds: (0, 4) [C-F], (0, 5) [C-Cl]
+  ✓ sn2_large: Bonds=2, Dihedrals=0
+      Bonds: (0, 1) [C-I], (0, 21) [C-N]
+  ✓ spiro-ts1: Bonds=1, Dihedrals=0
+      Bonds: (14, 15) [C-N]
+  ✓ spiro-ts2: Bonds=1, Dihedrals=0
+      Bonds: (13, 14) [O-C]
+  ✓ thia-ma: Bonds=1, Dihedrals=2
+      Bonds: (35, 47) [C-S]
+      Dihedrals: (48, 64, 65, 67), (50, 49, 51, 52)
+
+  Statistics:
+    Detection Rate: 23/29 bonds (79.3%)
+    False Positives: 0 bonds (0.0%)
+    F1 Score: 88.5%
+    Perfect Detection: 11/15 systems (73.3%)
+
+======================================================================
+SUMMARY
+======================================================================
+Metric Explanation:
+  Detection Rate: % of expected bonds found (Recall)
+  False Pos Rate: % of detected bonds that are incorrect
+  F1 Score: Harmonic mean of precision and recall
+
+Threshold    Detection       False Pos       F1 Score    
+----------------------------------------------------------------------
+0.10         100.0%           47.3%           69.0%
+0.15         100.0%           32.6%           80.6%
+0.20          96.6%           24.3%           84.8%
+0.25          93.1%           12.9%           90.0%
+0.30          93.1%            6.9%           93.1%
+0.35          89.7%            7.1%           91.2%
+0.40          89.7%            0.0%           94.5% ← current
+0.45          82.8%            0.0%           90.6%
+0.50          79.3%            0.0%           88.5%

@@ -581,7 +581,7 @@ vib_analysis bimp.out \
 
 ## Python API
 
-See examplese/examples.ipynb
+See examples/examples.ipynb
 This function will return a dictionary of the results, and printing can be turned on to produce the same as the CLI
 For example:
 ```python

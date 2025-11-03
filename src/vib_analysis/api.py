@@ -108,6 +108,7 @@ def run_vib_analysis(
     mode: int = 0,
     ts_frame: int = config.DEFAULT_TS_FRAME,
     # Vibrational analysis parameters
+    relaxed: bool = config.RELAXED,
     bond_tolerance: float = config.BOND_TOLERANCE,
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
@@ -203,6 +204,7 @@ def run_vib_analysis(
     vib_results = analyze_internal_displacements(
         frames,
         ts_frame=ts_frame,
+        relaxed=relaxed,
         bond_tolerance=bond_tolerance,
         bond_threshold=bond_threshold,
         angle_threshold=angle_threshold,

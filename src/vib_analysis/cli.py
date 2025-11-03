@@ -28,6 +28,8 @@ def main():
     
     # Vibrational analysis tolerances
     vib_group = parser.add_argument_group('vibrational analysis parameters')
+    vib_group.add_argument('--relaxed', '-r', action='store_true',
+                          help='Use more relaxed rules for xyzgraph bond detection (may result in spurious bonds)')
     vib_group.add_argument('--bond-tolerance', type=float, default=config.BOND_TOLERANCE,
                           help=f'Bond detection tolerance factor (default: {config.BOND_TOLERANCE})')
     vib_group.add_argument('--bond-threshold', type=float, default=config.BOND_THRESHOLD,
@@ -107,6 +109,7 @@ def main():
             mode=args.mode,
             ts_frame=args.ts_frame,
             # Vibrational parameters
+            relaxed=args.relaxed,
             bond_tolerance=args.bond_tolerance,
             bond_threshold=args.bond_threshold,
             angle_threshold=args.angle_threshold,

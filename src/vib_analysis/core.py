@@ -59,18 +59,20 @@ def read_xyz_trajectory(file_path: str) -> List[Dict[str, Any]]:
     return frames
 
 def build_internal_coordinates(
-    frame: Dict[str, Any], 
+    frame: Dict[str, Any],
+    relaxed: bool = config.RELAXED,
     bond_tolerance: float = config.BOND_TOLERANCE,
 ) -> Dict[str, Any]:
     """
     Build internal coordinates (bonds, angles, dihedrals) using xyzgraph with hierarchical thresholds.
     
-    Uses three separate graphs with progressively tighter thresholds:
+    Uses two separate graphs:
     - Bond graph (flexible): captures forming/breaking bonds in TS
     - Tighter graph: more conservative connectivity for angles/dihedrals
     
     Args:
         frame: Frame dict with 'symbols' and 'positions' keys
+        relaxed: Use relaxed rules for xyzgraph (for complex ring systems)
         bond_tolerance: Multiplier for bond detection (most flexible)
         
     Returns:
@@ -100,6 +102,7 @@ def build_internal_coordinates(
         threshold_h_metal=threshold_h_m,
         threshold_metal_ligand=threshold_m_l,
         threshold_h_h=threshold_h_h,
+        relaxed=relaxed,  # Use relaxed rules if specified
         quick=True,  # Fast mode - we don't need bond orders
         method='cheminf',
         debug=False
@@ -413,6 +416,7 @@ def select_most_diverse_frames(frames: List[Dict[str, Any]], top_n: int = 2) -> 
 
 def analyze_internal_displacements(
     xyz_file_or_frames: Union[str, List[Dict[str, Any]]],
+    relaxed: bool = config.RELAXED,
     bond_tolerance: float = config.BOND_TOLERANCE,
     bond_threshold: float = config.BOND_THRESHOLD,
     angle_threshold: float = config.ANGLE_THRESHOLD,
@@ -465,6 +469,7 @@ def analyze_internal_displacements(
 
     internal_coords = build_internal_coordinates(
         frame=frames[ts_frame],
+        relaxed=relaxed,
         bond_tolerance=bond_tolerance,
     )
     

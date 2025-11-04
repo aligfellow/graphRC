@@ -8,6 +8,7 @@ All default values can be overridden by passing parameters to analysis functions
 # Coordinate Detection Tolerances
 # ============================================================================
 BOND_TOLERANCE = 1.4        # Multiplier for bond detection
+RELAXED = False             # Use relaxed rules for xyzgraph
 
 # ============================================================================
 # Significance Thresholds

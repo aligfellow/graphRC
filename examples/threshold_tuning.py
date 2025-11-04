@@ -240,7 +240,7 @@ def plot_threshold_results(sweep_results: Dict[float, Dict], output_dir: Path):
     fig, ax = plt.subplots(figsize=(5,5))
     
     # Plot lines with markers using custom color ordering
-    ax.plot(thresholds, detection_rates, marker='o', linewidth=3, markersize=8, label='True\nPositive', color='teal')
+    ax.plot(thresholds, detection_rates, marker='o', linewidth=3, markersize=8, label='Detection', color='teal')
     ax.plot(thresholds, false_pos_rates, marker='s', linewidth=3, markersize=8, label='False\nPositive', color='maroon')
     ax.plot(thresholds, f1_scores, marker='^', linestyle='--', linewidth=3, markersize=8, label='F1 Score', color='darkslateblue')
     

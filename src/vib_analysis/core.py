@@ -2,7 +2,7 @@ import numpy as np
 from itertools import combinations
 import os
 import logging
-from typing import List, Dict, Tuple, Any, Union
+from typing import List, Dict, Tuple, Any, Union, Optional
 from xyzgraph import DATA
 
 from . import config
@@ -60,18 +60,30 @@ def read_xyz_trajectory(file_path: str) -> List[Dict[str, Any]]:
 
 def build_internal_coordinates(
     frame: Dict[str, Any],
+    displaced_frames: Optional[List[Dict[str, Any]]] = None,
+    independent_graphs: bool = False,
+    ig_flexible: bool = config.IG_FLEXIBLE_DEFAULT,
     relaxed: bool = config.RELAXED,
     bond_tolerance: float = config.BOND_TOLERANCE,
 ) -> Dict[str, Any]:
     """
     Build internal coordinates (bonds, angles, dihedrals) using xyzgraph with hierarchical thresholds.
-    
     Uses two separate graphs:
     - Bond graph (flexible): captures forming/breaking bonds in TS
     - Tighter graph: more conservative connectivity for angles/dihedrals
+
+    When independent_graphs=True:
+    - TS connectivity built with bond_tolerance (flexible)
+    - Displaced connectivity built with xyzgraph defaults (strict) or bond_tolerance (if ig_flexible=True)
+    - All connectivity merged via union
+    - Bond coordinates derived from merged connectivity
+    - Angles/dihedrals derived from tighter TS connectivity for consistency
     
     Args:
         frame: Frame dict with 'symbols' and 'positions' keys
+        displaced_frames: Optional list of displaced frame dicts for connectivity augmentation
+        independent_graphs: If True, augment TS connectivity with displaced connectivity
+        ig_flexible: If True (with independent_graphs), apply bond_tolerance to displaced graphs
         relaxed: Use relaxed rules for xyzgraph (for complex ring systems)
         bond_tolerance: Multiplier for bond detection (most flexible)
         
@@ -109,10 +121,64 @@ def build_internal_coordinates(
     )
     
     # Extract bonds from flexible graph
-    bonds = [(i, j) for i, j in G_bonds.edges()]
-    logger.debug(f"Built bond graph with {len(bonds)} bonds (tolerance={bond_tolerance})")
+    ts_bonds = set(G_bonds.edges())
+    logger.debug(f"Built TS bond graph with {len(ts_bonds)} bonds (tolerance={bond_tolerance})")
     
-    # 2. Build tighter graph for angles/dihedrals with default xyzgraph thresholds
+    # 2. If independent_graphs, augment with displaced connectivity
+    if independent_graphs and displaced_frames:
+        logger.debug(f"Augmenting TS connectivity with displaced graphs (flexible={ig_flexible})")
+        
+        augmented_bonds = set(ts_bonds)  # Start with TS
+        
+        # Determine thresholds for displaced graphs
+        if ig_flexible:
+            # Use bond_tolerance (same as TS)
+            disp_h_nm = 0.42 * bond_tolerance
+            disp_nm_nm = 0.5 * bond_tolerance
+            disp_h_m = 0.45 * bond_tolerance
+            disp_h_h = 0.40 * bond_tolerance
+            logger.debug("Using flexible thresholds for displaced graphs")
+        else:
+            # Use xyzgraph defaults
+            disp_h_nm = 0.42
+            disp_nm_nm = 0.5
+            disp_h_m = 0.45
+            disp_h_h = 0.40
+            logger.debug("Using default thresholds for displaced graphs")
+        
+        # Build displaced graphs and collect bonds
+        for idx, disp_frame in enumerate(displaced_frames):
+            disp_atoms = [(disp_frame['symbols'][i], tuple(disp_frame['positions'][i])) 
+                         for i in range(len(disp_frame['symbols']))]
+            
+            G_disp = build_graph(
+                atoms=disp_atoms,
+                threshold=1.0,
+                threshold_h_nonmetal=disp_h_nm,
+                threshold_nonmetal_nonmetal=disp_nm_nm,
+                threshold_h_metal=disp_h_m,
+                threshold_metal_ligand=threshold_m_l,
+                threshold_h_h=disp_h_h,
+                relaxed=relaxed,
+                quick=True,
+                method='cheminf',
+                debug=False
+            )
+            
+            disp_bonds = set(G_disp.edges())
+            new_bonds = disp_bonds - ts_bonds
+            if new_bonds:
+                logger.debug(f"Displaced frame {idx}: found {len(new_bonds)} new bonds")
+            augmented_bonds.update(disp_bonds)
+        
+        logger.debug(f"Augmented connectivity: {len(ts_bonds)} TS bonds + {len(augmented_bonds - ts_bonds)} new = {len(augmented_bonds)} total")
+        bonds = list(augmented_bonds)
+    else:
+        # Standard behavior: TS only
+        bonds = list(ts_bonds)
+    
+    # 3. Build tighter graph for angles/dihedrals with default xyzgraph thresholds
+    # Always use TS geometry for consistency
     G_tight = build_graph(
         atoms=atoms_list,
         threshold=1.0,  # Use xyzgraph defaults
@@ -206,7 +272,7 @@ def calculate_internal_changes(
     dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
     coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
     coupled_proton_threshold: Union[float, bool] = config.COUPLED_PROTON_THRESHOLD
-) -> Tuple[Dict, Dict, Dict, Dict, Dict]:
+) -> Tuple[Dict, Dict, Dict, Dict, Dict, set]:
     """
     Track changes in internal coordinates across trajectory.
     
@@ -225,8 +291,9 @@ def calculate_internal_changes(
         
     Returns:
         Tuple of (bond_changes, angle_changes, minor_angles, 
-                  unique_dihedrals, dependent_dihedrals)
-        Each is a dict mapping coordinate tuple to (max_change, initial_value)
+                  unique_dihedrals, dependent_dihedrals, coupled_proton_bonds)
+        Each dict maps coordinate tuple to (max_change, initial_value)
+        coupled_proton_bonds is a set of bonds detected via coupled threshold
     """
     # Get symbols from ts_frame for element identification
     symbols = ts_frame['symbols']
@@ -424,6 +491,8 @@ def analyze_internal_displacements(
     coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
     coupled_proton_threshold: Union[float, bool] = config.COUPLED_PROTON_THRESHOLD,
     ts_frame: int = config.DEFAULT_TS_FRAME,
+    independent_graphs: bool = False,
+    ig_flexible: bool = config.IG_FLEXIBLE_DEFAULT,
 ) -> Dict[str, Any]:
     """
     Analyze vibrational displacements in trajectory to identify structural changes.
@@ -467,16 +536,21 @@ def analyze_internal_displacements(
             "list of frame dicts."
         )
 
-    internal_coords = build_internal_coordinates(
-        frame=frames[ts_frame],
-        relaxed=relaxed,
-        bond_tolerance=bond_tolerance,
-    )
-    
+    # Select diverse frames FIRST (needed for independent_graphs mode)
     selected_indices = select_most_diverse_frames(frames)
     selected_frames = [frames[i] for i in selected_indices]
     
-    logger.info(f"Selected frames {selected_indices} for analysis")
+    logger.info(f"Using TS frame {ts_frame}, selected frames {selected_indices} for analysis")
+    
+    # Build internal coordinates with optional augmentation
+    internal_coords = build_internal_coordinates(
+        frame=frames[ts_frame],
+        displaced_frames=selected_frames if independent_graphs else None,
+        independent_graphs=independent_graphs,
+        ig_flexible=ig_flexible,
+        relaxed=relaxed,
+        bond_tolerance=bond_tolerance,
+    )
 
     bond_changes, angle_changes, minor_angles, unique_dihedrals, dependent_dihedrals, coupled_proton_bonds = calculate_internal_changes(
         frames=selected_frames,

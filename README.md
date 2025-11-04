@@ -745,6 +745,8 @@ python examples/threshold_tuning.py
 - **0%** false positive rate
 - **full accuracy of *all* vibrational bonds across *all* 15 transition states**  
 
+![threshold tuning](images/threshold_optimization.png)
+
 Detailed validation results are written to `examples/threshold_optimization.txt` for full transparency.
 
 ---

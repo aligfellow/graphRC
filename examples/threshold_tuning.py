@@ -208,6 +208,66 @@ def write_detailed_results(f, threshold: float, results: List[Dict], stats: Dict
     f.write(f"    Perfect Detection: {stats['passed']}/{stats['total']} systems ({stats['pass_rate']:.1f}%)\n")
 
 
+def plot_threshold_results(sweep_results: Dict[float, Dict], output_dir: Path):
+    """
+    Plot threshold validation results showing Detection Rate, False Positive Rate, and F1 Score.
+    
+    Args:
+        sweep_results: Dictionary mapping thresholds to statistics
+        output_dir: Directory to save the plot
+    """
+    # Plotting imports
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    # Set up global style
+    sns.set_theme(style='ticks', context='talk', palette='deep')
+    plt.rcParams.update({
+        'axes.titlesize': 16,
+        'axes.labelsize': 16,
+        'xtick.labelsize': 14,
+        'ytick.labelsize': 14,
+    })
+
+    plt.rcParams['figure.dpi'] = 100  
+    plt.rcParams['savefig.dpi'] = 300 
+    # Extract data
+    thresholds = sorted(sweep_results.keys())
+    detection_rates = [sweep_results[t]['detection_rate'] for t in thresholds]
+    false_pos_rates = [sweep_results[t]['false_positive_rate'] for t in thresholds]
+    f1_scores = [sweep_results[t]['f1_score'] for t in thresholds]
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(5,5))
+    
+    # Plot lines with markers using custom color ordering
+    ax.plot(thresholds, detection_rates, marker='o', linewidth=3, markersize=8, label='True\nPositive', color='teal')
+    ax.plot(thresholds, false_pos_rates, marker='s', linewidth=3, markersize=8, label='False\nPositive', color='maroon')
+    ax.plot(thresholds, f1_scores, marker='^', linestyle='--', linewidth=3, markersize=8, label='F1 Score', color='darkslateblue')
+    
+    # Mark current default threshold
+    ax.axvline(x=config.BOND_THRESHOLD, color='lightgray', linewidth=20, alpha=0.7, zorder=0)
+    
+    # Formatting
+    ax.set_xlabel('Bond Threshold (Å)')
+    ax.set_ylabel('Percentage (%)')
+    ax.set_ylim(-5, 110)
+    ax.set_xlim(min(thresholds) - 0.02, max(thresholds) + 0.02)
+
+    # Legend
+    leg = ax.legend(bbox_to_anchor=(1, 1), loc='upper left', fontsize=14)
+    for text in leg.get_texts():
+        text.set_ha('center')
+    
+    ax.set_aspect(1/ax.get_data_ratio())
+    
+    # Save
+    output_path = output_dir / ".." / "images" / "threshold_optimization.png"
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"\nPlot saved to: {output_path}")
+
+
 def run_threshold_validation(output_file: str = None):
     """
     Validate bond threshold across multiple values.
@@ -217,9 +277,10 @@ def run_threshold_validation(output_file: str = None):
     """
     # Default output to examples directory
     if output_file is None:
-        output_file = Path(__file__).parent / "threshold_optimization.txt"
-    output_file = Path(output_file)
-    thresholds = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+        output_path = Path(__file__).parent / "threshold_optimization.txt"
+    else:
+        output_path = Path(output_file)
+    thresholds = [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6]
     
     # Get test systems
     data_dir = Path(__file__).parent / "data"
@@ -228,12 +289,12 @@ def run_threshold_validation(output_file: str = None):
                  if f.stem.replace('.v000', '') in EXPECTED_RESULTS]
     
     print(f"Validating bond thresholds across {len(basenames)} systems...")
-    print(f"Detailed results will be written to: {output_file}\n")
+    print(f"Detailed results will be written to: {output_path}\n")
     
     sweep_results = {}
     
     # Open output file with context manager
-    with open(output_file, 'w') as f:
+    with open(output_path, 'w') as f:
         f.write("="*70 + "\n")
         f.write("BOND THRESHOLD VALIDATION\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -355,8 +416,11 @@ def run_threshold_validation(output_file: str = None):
         print(f"   Current: {config.BOND_THRESHOLD} (F1: {current_f1:.1f}%)")
         print(f"   Improvement: +{improvement:.1f}%")
     
-    print(f"\nDetailed results written to: {output_file}")
+    print(f"\nDetailed results written to: {output_path}")
     print("="*70)
+    
+    # Generate plot
+    plot_threshold_results(sweep_results, output_path.parent)
 
 
 if __name__ == "__main__":

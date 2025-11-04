@@ -29,6 +29,7 @@ COUPLED_MOTION_FILTER  = 0.2  # For filtering coupled angle/dihedral changes
 # ============================================================================
 DISTANCE_TOLERANCE = 0.2        # Bond formation/breaking tolerance (Å)
 BOND_ORDER_EPSILON = 0.1        # Minimum change to report bond order change
+IG_FLEXIBLE_DEFAULT = False     # Apply bond_tolerance to displaced graphs (with -ig)
 
 # ============================================================================
 # ASCII Visualization

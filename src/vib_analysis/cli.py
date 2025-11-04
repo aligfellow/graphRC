@@ -60,6 +60,8 @@ def main():
                             help=f'Tolerance for bond formation/breaking (default: {config.DISTANCE_TOLERANCE} Å)')
     graph_group.add_argument('--independent-graphs', '-ig', action='store_true',
                             help='Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use with IRC or QRC displaced trajectories)')
+    graph_group.add_argument('--ig-flexible', '-igf', action='store_true',
+                            help='Apply bond-tolerance to displaced graphs (with -ig). Default: displaced graphs use stricter xyzgraph defaults for more rigorous connectivity detection')
     
     # ASCII visualization
     ascii_group = parser.add_argument_group('ASCII rendering options')
@@ -102,6 +104,11 @@ def main():
             print(f"Error: --coupled-proton-threshold must be a number or 'false', got '{coupled_proton_threshold}'", file=sys.stderr)
             sys.exit(1)
     
+    # Auto-enable -ig if -igf is used
+    if args.ig_flexible and not args.independent_graphs:
+        print("Warning: --ig-flexible requires -ig, automatically enabling -ig", file=sys.stderr)
+        args.independent_graphs = True
+    
     # Run analysis
     try:
         results = run_vib_analysis(
@@ -123,6 +130,7 @@ def main():
             multiplicity=args.multiplicity,
             distance_tolerance=args.distance_tolerance,
             independent_graphs=args.independent_graphs,
+            ig_flexible=args.ig_flexible,
             ascii_scale=args.ascii_scale,
             ascii_include_h=args.show_h,
             ascii_neighbor_shells=args.ascii_shells,

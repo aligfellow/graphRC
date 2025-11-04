@@ -529,7 +529,7 @@ vib_analysis input.xyz -g --independent-graphs
 
 ### Independent Graph Building
 
-By default, molecular graphs are built from TS geometry with bonding guided by the bond changes across the trajectory. The `--independent-graphs` flag enables a more rigorous approach where each displaced structure's graph is built independently using its actual geometry:
+By default, molecular graphs are built from TS geometry with bonding guided by the bond changes across the trajectory. The `--independent-graphs` (`-ig`) flag enables connectivity augmentation where displaced structure graphs are built independently and merged with TS connectivity:
 
 ```bash
 # Standard approach (TS-centric, default)
@@ -537,17 +537,31 @@ vib_analysis irc_trajectory.xyz -g
 
 # Independent approach (builds from actual geometries)
 vib_analysis irc_trajectory.xyz -g --independent-graphs
+
+# Independent approach with flexible displaced connectivity
+vib_analysis irc_trajectory.xyz -g --independent-graphs --ig-flexible
 ```
+
+**How it works:**
+- **TS connectivity**: Built with `bond_tolerance` (flexible, captures forming/breaking bonds)
+- **Displaced connectivity**: Built with xyzgraph defaults  or `bond_tolerance` (if `--ig-flexible`)
+- **Merged connectivity**: Union of TS and displaced graphs
+- **Result**: All connectivity tracked, including bonds that only appear in displaced frames
 
 **When to use `--independent-graphs`:**
 - Analyzing IRC or QRC trajectories with actual minima geometries
+- Ensuring no connectivity is missed due to TS geometry bias
+- Validating that all relevant bonds are tracked across the trajectory
 - Formal validation of connectivity changes
-- Comparing results between methods
-- Ensuring no bias from TS geometry
+
+**When to use `--ig-flexible`:**
+- When displaced endpoints have stretched bonds that should still be tracked
+- When you want maximum connectivity captured
 
 **Differences:**
-- **Default (TS-centric)**: All graphs built from TS geometry with bond/unbond guidance based on distance changes
-- **Independent**: Each graph built from its own actual geometry; `xyzgraph` determines connectivity from coordinates alone
+- **Default (TS-centric)**: Internal coordinates from TS geometry only
+- **Independent (`-ig`)**: Augments TS with bonds from displaced geometries (strict thresholds)
+- **Independent + Flexible (`-ig -igf`)**: Augments TS with bonds from displaced geometries (flexible thresholds)
 
 ### Output Control
 

@@ -122,6 +122,7 @@ def run_vib_analysis(
     multiplicity: Optional[int] = None,
     distance_tolerance: float = config.DISTANCE_TOLERANCE,
     independent_graphs: bool = False,
+    ig_flexible: bool = config.IG_FLEXIBLE_DEFAULT,
     ascii_scale: float = config.ASCII_SCALE,
     ascii_include_h: bool = config.ASCII_INCLUDE_H,
     ascii_neighbor_shells: int = config.ASCII_NEIGHBOR_SHELLS,
@@ -199,6 +200,7 @@ def run_vib_analysis(
     
     if print_output:
         print(f"Loaded {len(frames)} frames from trajectory")
+        print(f"Using TS frame: {ts_frame}")
     
     # Analyze internal coordinates
     vib_results = analyze_internal_displacements(
@@ -211,7 +213,13 @@ def run_vib_analysis(
         dihedral_threshold=dihedral_threshold,
         coupled_motion_filter=coupled_motion_filter,
         coupled_proton_threshold=coupled_proton_threshold,
+        independent_graphs=independent_graphs,
+        ig_flexible=ig_flexible,
     )
+    
+    if print_output:
+        selected_frames = vib_results.get('frame_indices', [])
+        print(f"Selected diverse frames for analysis: {selected_frames}")
     
     # Check if anything was detected - if not, try with relaxed thresholds
     nothing_detected = (

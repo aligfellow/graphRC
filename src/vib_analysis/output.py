@@ -94,7 +94,7 @@ def print_analysis_results(
         print(f"\n✓ Saved displacement structures: "
               f"{os.path.basename(f_path)}, {os.path.basename(r_path)}")
     
-    print("\n" + "=" * 80)
+    print( "=" * 80)
 
 
 # =====================================================================================

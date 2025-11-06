@@ -5,14 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "vib_analysis"
 version = "1.2.2"
-description = "A package for analyzing internal coordinate changes from vibrational mode trajectories."
+description = "Internal Coordinate Analysis of Vibrational Modes."
 authors = [{name = "Dr Alister Goodfellow"}]
 readme = "README.md"  
-requires-python = ">=3.6" 
+requires-python = ">=3.8" 
 dependencies = [
     "numpy",
     "cclib",
-    "rdkit", 
     "networkx",
     "xyzgraph"
 ]

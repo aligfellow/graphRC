@@ -7,8 +7,18 @@ graph-based analysis.
 """
 
 import os
+import sys
 import logging
 from typing import List, Optional, Dict, Any
+from . import __version__, __citation__
+
+try:
+    import xyzgraph
+    _xyzg_version = xyzgraph.__version__
+    _xyzg_citation = xyzgraph.__citation__
+except (ImportError, AttributeError):
+    _xyzg_version = "unknown"
+    _xyzg_citation = None
 
 from . import config
 from .core import analyze_internal_displacements, read_xyz_trajectory
@@ -24,6 +34,36 @@ from .characterize import characterize_vib_mode
 
 logger = logging.getLogger("vib_analysis")
 
+def collect_metadata(input_file: str, **params) -> Dict[str, Any]:
+    """Collect runtime metadata for reproducibility. Only includes non-default parameters."""
+    # Map parameters to their config defaults
+    defaults = {
+        'mode': 0,
+        'ts_frame': config.DEFAULT_TS_FRAME,
+        'bond_tolerance': config.BOND_TOLERANCE,
+        'bond_threshold': config.BOND_THRESHOLD,
+        'angle_threshold': config.ANGLE_THRESHOLD,
+        'dihedral_threshold': config.DIHEDRAL_THRESHOLD,
+        'enable_graph': False,
+        'graph_method': 'cheminf',
+        'charge': 0,
+        'independent_graphs': False,
+    }
+    
+    # Only include non-default parameters
+    non_default_params = {
+        k: v for k, v in params.items() 
+        if v is not None and k in defaults and v != defaults[k]
+    }
+    
+    return {
+        'version': __version__,
+        'citation': __citation__,
+        'input_file': os.path.abspath(input_file),
+        'xyzgraph_version': _xyzg_version,
+        'xyzgraph_citation': _xyzg_citation,
+        'parameters': non_default_params,
+    }
 
 def load_trajectory(
     input_file: str,
@@ -182,23 +222,46 @@ def run_vib_analysis(
         # Print main header first
         print("=" * 80)
         print(" " * 30 + "VIB_ANALYSIS")
+        print(" " * 12 + "Internal Coordinate Analysis of Vibrational Modes")
+        print(" " * 26 + "A. S. Goodfellow, 2025")
         print("=" * 80)
         
         # Set up logging (prints debug message if debug mode)
         setup_logging(debug=debug)
     
-    # Load trajectory
+    # Load trajectory (suppress print messages until after metadata)
     trajectory_data = load_trajectory(
         input_file,
         mode=mode,
         orca_pltvib_path=orca_pltvib_path,
         save_to_disk=save_trajectory,
-        print_output=print_output
+        print_output=False  # Suppress here, will print in output.py
     )
     
     frames = trajectory_data['frames']
     
+    # Collect metadata first (will be printed in output.py)
+    metadata = collect_metadata(
+        input_file=input_file,
+        mode=mode,
+        ts_frame=ts_frame,
+        bond_tolerance=bond_tolerance,
+        bond_threshold=bond_threshold,
+        angle_threshold=angle_threshold,
+        dihedral_threshold=dihedral_threshold,
+        enable_graph=enable_graph,
+        graph_method=graph_method if enable_graph else None,
+        charge=charge if enable_graph else None,
+        independent_graphs=independent_graphs if enable_graph else None,
+    )
+    
     if print_output:
+        from .output import print_metadata_header
+        print_metadata_header(metadata, trajectory_data)
+        
+    # Now print loading info after metadata will be displayed
+    if print_output:
+        print(f"Reading trajectory from {os.path.basename(input_file)}")
         print(f"Loaded {len(frames)} frames from trajectory")
         print(f"Using TS frame: {ts_frame}")
     
@@ -342,7 +405,9 @@ def run_vib_analysis(
             print_output=print_output,
         )
     
+    # Build results dictionary (metadata already collected earlier)
     results_dict = {
+        'metadata': metadata,
         'trajectory': trajectory_data,
         'vibrational': vib_results,
         'characterization': characterization,

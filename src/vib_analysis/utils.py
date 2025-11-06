@@ -6,12 +6,12 @@ geometry calculations, and centralized logging configuration.
 """
 
 import os
+import sys
 import logging
 import numpy as np
 from typing import List, Optional, Tuple, Dict, Any
 
 logger = logging.getLogger("vib_analysis")
-
 
 # Geometry calculation functions
 

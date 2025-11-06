@@ -14,6 +14,40 @@ logger = logging.getLogger("vib_analysis")
 
 
 # =====================================================================================
+# === METADATA HEADER OUTPUT ===
+# =====================================================================================
+
+def print_metadata_header(metadata: Dict[str, Any], trajectory: Dict[str, Any]) -> None:
+    """Print metadata information header with proper text wrapping."""
+    import textwrap
+
+    print("\nVersion:        " + f"vib_analysis v{metadata['version']}")
+    print("Dependency:     " + f"xyzgraph v{metadata['xyzgraph_version']}")
+
+    # Wrap citation at 80 characters with proper indent
+    citation = metadata['citation']
+    xyzg_citation = metadata.get('xyzgraph_citation')
+    wrapped = textwrap.fill(citation, width=80, initial_indent="Citations:   1) ", 
+                           subsequent_indent="                ")
+    print(wrapped)
+    if xyzg_citation:
+        wrapped = textwrap.fill(xyzg_citation, width=80, initial_indent="             2) ",
+                               subsequent_indent="                ")
+        print(wrapped)
+
+    print("Input:          " + os.path.basename(metadata['input_file']))
+    
+    # Print non-default parameters if any
+    if metadata['parameters']:
+        params_str = ", ".join(f"{k}={v}" for k, v in metadata['parameters'].items())
+        wrapped_params = textwrap.fill(params_str, width=64, 
+                                       initial_indent="Parameters:     ",
+                                       subsequent_indent="                ")
+        print(wrapped_params)
+    print()
+
+
+# =====================================================================================
 # === MASTER OUTPUT FUNCTION ===
 # =====================================================================================
 
@@ -34,6 +68,7 @@ def print_analysis_results(
         show_all: If True, include minor angle and dihedral changes
         mode: Vibrational mode number (for frequency display)
     """
+    
     # Frequency info
     frequencies = results['trajectory'].get('frequencies')
     print_frequency_info(frequencies, mode)

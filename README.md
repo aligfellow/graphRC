@@ -1,8 +1,6 @@
-# vib_analysis
+# vib_analysis: Internal Coordinate Analysis of Vibrational Modes
 
-> **Automated vibrational mode analysis and structural transformation detection**
-
-Identify bond formation/breaking, angle changes, and dihedral rotations from vibrational trajectories with optional graph-based transformation analysis.
+Identify bond formation/breaking, angle changes, and dihedral rotations from vibrational trajectories with graph-based transformation analysis.
 
 [![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis)
 

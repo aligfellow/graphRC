@@ -5,6 +5,7 @@ import argparse
 import os
 import sys
 import logging
+from . import __version__, __citation__
 
 from . import config
 from .api import run_vib_analysis
@@ -13,12 +14,18 @@ from .output import print_analysis_results
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Analyze vibrational trajectories for structural changes',
+        description='Internal Coordinate Analysis of Vibrational Modes.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     
+    # Version and citation
+    parser.add_argument('--version', action='store_true',
+                       help='Show version information and exit')
+    parser.add_argument('--cite', action='store_true',
+                       help='Show citation information and exit')
+    
     # Input/output
-    parser.add_argument('input', help='Input file (XYZ trajectory or QM output)')
+    parser.add_argument('input', nargs='?', help='Input file (XYZ trajectory or QM output)')
     
     # Mode selection
     parser.add_argument('--mode', '-m', type=int, default=0,
@@ -88,7 +95,21 @@ def main():
     
     args = parser.parse_args()
     
-    # Check input file exists
+    # Handle --version flag
+    if args.version:
+        print(f"vib_analysis {__version__}")
+        sys.exit(0)
+    
+    # Handle --cite flag
+    if args.cite:
+        print(f"Please cite as:\n{__citation__}")
+        sys.exit(0)
+    
+    # Check input file was provided and exists
+    if not args.input:
+        parser.print_help()
+        sys.exit(1)
+    
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' not found.", file=sys.stderr)
         sys.exit(1)

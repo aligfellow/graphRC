@@ -120,16 +120,18 @@ vib_analysis examples/data/sn2.v000.xyz
 ```
 ================================================================================
                               VIB_ANALYSIS
+            Internal Coordinate Analysis of Vibrational Modes
+                          A. S. Goodfellow, 2025
 ================================================================================
 
-================================================================================
-                    VIBRATIONAL TRAJECTORY ANALYSIS
-================================================================================
+Reading trajectory from sn2.v000.xyz
+Loaded 20 frames from trajectory
+Using TS frame: 0
+Selected diverse frames for analysis: [5, 14]
 
 =========================== Significant Bond Changes ===========================
 Bond (0, 4)  [C-F]   Δ =   1.584 Å,  Initial =   1.717 Å
 Bond (0, 5)  [C-Cl]  Δ =   1.355 Å,  Initial =   1.952 Å
-
 ================================================================================
 ```
 
@@ -142,15 +144,11 @@ Bond (0, 5)  [C-Cl]  Δ =   1.355 Å,  Initial =   1.952 Å
 ![Dihedral Rotation](images/dihedral.gif)
 
 ```bash
-vib_analysis examples/data/dihedral.v000.xyz
+vib_analysis examples/data/dihedral.v000.xyz -g
 ```
 
 **Output (truncated):**
 ```
-================================================================================
-                              VIB_ANALYSIS
-================================================================================
-
 ================================================================================
                          MODE CHARACTERIZATION
 ================================================================================
@@ -166,8 +164,7 @@ Description: Single bond rotation
 ================================================================================
 
 ========================= Significant Dihedral Changes =========================
-Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial = 359.998 °
-
+Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial =   0.002 °
 ================================================================================
 ```
 
@@ -187,7 +184,14 @@ vib_analysis examples/data/bimp.v000.xyz
 ```
 ================================================================================
                               VIB_ANALYSIS
+            Internal Coordinate Analysis of Vibrational Modes
+                          A. S. Goodfellow, 2025
 ================================================================================
+
+Reading trajectory from bimp.v000.xyz
+Loaded 20 frames from trajectory
+Using TS frame: 0
+Selected diverse frames for analysis: [5, 15]
 
 ================================================================================
                     VIBRATIONAL TRAJECTORY ANALYSIS
@@ -196,7 +200,6 @@ vib_analysis examples/data/bimp.v000.xyz
 =========================== Significant Bond Changes ===========================
 Bond (11, 12)  [O-C]  Δ =   2.052 Å,  Initial =   2.064 Å
 Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
-
 ================================================================================
 ```
 
@@ -229,41 +232,17 @@ First 5 non-zero vibrational frequencies:
   Mode 4: 15.83 cm⁻¹
 
 ================================================================================
-                         VIBRATIONAL GRAPH ANALYSIS SUMMARY
-================================================================================
-
-Bonds Formed (1):
-  Bond (11, 12) [O-C]: formed as single (order=1.0)
-
-Bonds Broken (1):
-  Bond (10, 14) [C-C]: broken from single (order=1.0)
-
-Interpret with care, bond orders and charges are empirical and LOW confidence.
-
-Bond Order Changes (4 bonds):
-  Bond (1, 10) [C-C]: single→double (order 1.0→2.0)
-  Bond (13, 14) [C-C]: single→double (order 1.0→2.0)
-  Bond (1, 2) [C-N]: double→single (order 2.0→1.0)
-  Bond (13, 31) [C-N]: double→single (order 2.0→1.0)
-
-Formal Charge Redistribution (4 atoms):
-  Atom 2 [N]: charge +1→+0 (Δq = -1.00)
-  Atom 11 [O]: charge -1→+0 (Δq = +1.00)
-  Atom 12 [C]: charge -1→+0 (Δq = +1.00)
-  Atom 31 [N]: charge +1→+0 (Δq = -1.00)
-
-================================================================================
 ASCII REPRESENTATIONS
 ================================================================================
 
 Transition State (TS):
 
-           C‖
-           ‖‖
-           ‖‖
-            ‖‖
-            ‖‖    ------O
-C-----------C‖----       **
+           C
+           |
+           |
+            |
+            |     ------O
+C-----------C-----       **
             *              *
             *               **
            *                 /C
@@ -292,12 +271,12 @@ C-
 
 Frame 2:
 
-           C‖
-           ‖‖
-           ‖‖
-            ‖‖
-            ‖‖    ------O
-C-----------C‖----       \\
+           C
+           |
+           |
+            |
+            |     ------O
+C-----------C-----       \\
                            \
                             \\
                              /C
@@ -321,7 +300,6 @@ Description: Bond formation/breaking
 =========================== Significant Bond Changes ===========================
 Bond (11, 12)  [O-C]  Δ =   2.052 Å,  Initial =   2.064 Å
 Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
-
 ================================================================================
 ```
 
@@ -351,7 +329,14 @@ vib_analysis examples/data/sn2_large.v000.xyz
 ```
 ================================================================================
                               VIB_ANALYSIS
+            Internal Coordinate Analysis of Vibrational Modes
+                          A. S. Goodfellow, 2025
 ================================================================================
+
+Reading trajectory from sn2_large.v000.xyz
+Loaded 20 frames from trajectory
+Using TS frame: 0
+Selected diverse frames for analysis: [5, 15]
 
 ================================================================================
                     VIBRATIONAL TRAJECTORY ANALYSIS
@@ -360,7 +345,6 @@ vib_analysis examples/data/sn2_large.v000.xyz
 =========================== Significant Bond Changes ===========================
 Bond (0, 21)  [C-N]  Δ =   2.388 Å,  Initial =   2.158 Å
 Bond (0, 1)   [C-I]  Δ =   1.878 Å,  Initial =   2.563 Å
-
 ================================================================================
 ```
 
@@ -380,11 +364,14 @@ vib_analysis examples/data/mn-h2.log --all
 ```
 ================================================================================
                               VIB_ANALYSIS
+            Internal Coordinate Analysis of Vibrational Modes
+                          A. S. Goodfellow, 2025
 ================================================================================
 
-Parsing mn-h2.log with cclib...
-Saved trajectory to mn-h2.v000.xyz
+Reading trajectory from mn-h2.log
 Loaded 20 frames from trajectory
+Using TS frame: 0
+Selected diverse frames for analysis: [5, 15]
 
 Analyzed Mode 0: -748.48 cm⁻¹ (imaginary)
 
@@ -417,7 +404,6 @@ Note: These angles depend on other changes and may not be significant alone.
 Dihedral (63, 1, 2, 36)  [H-Mn-P-C]  Δ =  81.780 °,  Initial =  76.752 °
 
 Note: These dihedrals depend on other changes and may not be significant alone.
-
 ================================================================================
 ```
 
@@ -437,24 +423,29 @@ vib_analysis <input_file> [options]
 ```text
 > vib_analysis -h
 
-usage: vib_analysis [-h] [--mode MODE] [--ts-frame TS_FRAME] [--bond-tolerance BOND_TOLERANCE] [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD]
-                    [--dihedral-threshold DIHEDRAL_THRESHOLD] [--coupled-motion-filter COUPLED_MOTION_FILTER] [--all] [--graph] [--method {cheminf,xtb}] [--charge CHARGE]
-                    [--multiplicity MULTIPLICITY] [--distance-tolerance DISTANCE_TOLERANCE] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
+usage: vib_analysis [-h] [--version] [--cite] [--mode MODE] [--ts-frame TS_FRAME] [--relaxed] [--bond-tolerance BOND_TOLERANCE]
+                    [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD] [--dihedral-threshold DIHEDRAL_THRESHOLD]
+                    [--coupled-motion-filter COUPLED_MOTION_FILTER] [--coupled-proton-threshold COUPLED_PROTON_THRESHOLD] [--all] [--graph]
+                    [--method {cheminf,xtb}] [--charge CHARGE] [--multiplicity MULTIPLICITY] [--distance-tolerance DISTANCE_TOLERANCE]
+                    [--independent-graphs] [--ig-flexible] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
                     [--save-displacement] [--displacement-scale DISPLACEMENT_SCALE] [--no-save] [--orca-path ORCA_PATH] [--debug]
-                    input
+                    [input]
 
-Analyze vibrational trajectories for structural changes
+Internal Coordinate Analysis of Vibrational Modes.
 
 positional arguments:
   input                 Input file (XYZ trajectory or QM output)
 
 options:
   -h, --help            show this help message and exit
-  --mode, -m MODE       Vibrational mode to analyze (default: 0, ignored for XYZ)
+  --version             Show version information and exit
+  --cite                Show citation information and exit
+  --mode MODE, -m MODE  Vibrational mode to analyze (default: 0, ignored for XYZ)
   --ts-frame TS_FRAME   Frame index to use as TS reference (default: 0)
   --debug, -d           Enable debug output
 
 vibrational analysis parameters:
+  --relaxed, -r         Use more relaxed rules for xyzgraph bond detection (may result in spurious bonds)
   --bond-tolerance BOND_TOLERANCE
                         Bond detection tolerance factor (default: 1.4)
   --bond-threshold BOND_THRESHOLD
@@ -464,7 +455,7 @@ vibrational analysis parameters:
   --dihedral-threshold DIHEDRAL_THRESHOLD
                         Threshold for significant dihedral changes in degrees (default: 20.0)
   --coupled-motion-filter COUPLED_MOTION_FILTER
-                        Bond stability threshold for filtering coupled changes in Å (default: 0.2, advanced)
+                        Coupled motion filter for filtering coupled changes in Å (default: 0.2, advanced)
   --coupled-proton-threshold COUPLED_PROTON_THRESHOLD
                         Reduced threshold for coupled proton transfers in Å (default: 0.15, use "false" to disable)
   --all, -a             Report all changes including minor ones
@@ -479,19 +470,22 @@ graph analysis parameters:
   --distance-tolerance DISTANCE_TOLERANCE
                         Tolerance for bond formation/breaking (default: 0.2 Å)
   --independent-graphs, -ig
-                        Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use with IRC or QRC displaced trajectories)
+                        Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use
+                        with IRC or QRC displaced trajectories)
+  --ig-flexible, -igf   Apply bond-tolerance to displaced graphs (with -ig). Default: displaced graphs use stricter xyzgraph defaults for more
+                        rigorous connectivity detection
 
 ASCII rendering options:
-  --ascii-scale, -as ASCII_SCALE
+  --ascii-scale ASCII_SCALE, -as ASCII_SCALE
                         Scale for ASCII molecular rendering (default: 2.5)
   --show-h              Show hydrogen atoms in ASCII rendering
-  --ascii-shells, -ash ASCII_SHELLS
+  --ascii-shells ASCII_SHELLS, -ash ASCII_SHELLS
                         Neighbor shells around transformation core (default: 1)
 
 output options:
   --save-displacement, -sd
                         Save displaced structure pair
-  --displacement-scale, -ds DISPLACEMENT_SCALE
+  --displacement-scale DISPLACEMENT_SCALE, -ds DISPLACEMENT_SCALE
                         Displacement level (1-4, ~0.2-0.8 amplitude) (default: 1)
   --no-save             Do not save trajectory to disk (keep in memory only)
   --orca-path ORCA_PATH
@@ -555,6 +549,7 @@ vib_analysis irc_trajectory.xyz -g --independent-graphs --ig-flexible
 **When to use `--ig-flexible`:**
 - When displaced endpoints have stretched bonds that should still be tracked
 - When you want maximum connectivity captured
+- Generally *unnecessary*
 
 **Differences:**
 - **Default (TS-centric)**: Internal coordinates from TS geometry only
@@ -574,7 +569,7 @@ vib_analysis input.xyz -sd -ds 2
 vib_analysis input.xyz --no-save
 
 # Specify ORCA path
-vib_analysis input.out --orca-path /opt/orca
+vib_analysis input.out --orca-path /bin/orca
 ```
 
 ### Complete Example
@@ -599,11 +594,14 @@ For example:
 ```python
 from vib_analysis import run_vib_analysis
 
-orca_out = 'data/bimp.v000.xyz'
+xyz_trj = 'data/bimp.v000.xyz'
+# ORCA_PATH = os.system('which orca')
+# ORCA_PATH = '/path/to/orca'
 
 # Basic analysis
 results = run_vib_analysis(
-        input_file=orca_out,
+        input_file=xyz_trj,
+        # orca_pltvib_path=ORCA_PATH
     )
 
 vib = results['vibrational']
@@ -623,7 +621,7 @@ results_ig = run_vib_analysis(
 ```
 Outputs:
 ```python
-{'bond_changes': {(10, 14): (0.426, 2.656), (11, 12): (2.052, 2.064)}, 'angle_changes': {}, 'minor_angle_changes': {(13, 12, 29): (14.436, 122.116), (29, 12, 30): (12.54, 117.79), (12, 13, 14): (14.118, 123.702)}, 'dihedral_changes': {}, 'minor_dihedral_changes': {(0, 1, 10, 11): (36.48, 14.986), (4, 9, 10, 11): (50.966, 169.776), (29, 12, 13, 31): (67.358, 17.521), (12, 13, 31, 33): (62.151, 330.369)}, 'frame_indices': [5, 15], 'atom_index_map': {0: 'O', 1: 'C', ...}}
+{'bond_changes': {(10, 14): (0.426, 2.656), (11, 12): (2.052, 2.064)}, 'angle_changes': {}, 'minor_angle_changes': {(13, 12, 29): (14.436, 122.116), (29, 12, 30): (12.54, 117.79), (12, 13, 14): (14.118, 123.702)}, 'dihedral_changes': {}, 'minor_dihedral_changes': {(0, 1, 10, 11): (36.48, -14.986), (4, 9, 10, 11): (50.966, -169.776), (29, 12, 13, 31): (67.358, -17.521), (12, 13, 31, 33): (62.151, 29.631)}, 'frame_indices': [5, 15], 'atom_index_map': {0: 'O', 1: 'C', ...}}
 True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
 ```
   - This can be used to check for a known vibrational mode (theoretical_bond_change) in `results['bond_changes']`
@@ -633,7 +631,14 @@ True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
 ### Results Structure
 
 ```python
-{
+{   'metadata': {
+      'version': float, 
+      'citation': str, 
+      'input_file': str, 
+      'xyzgraph_version': float, 
+      'xyzgraph_citation': str, 
+      'parameters': Dict
+    }, 
     'trajectory': {
         'frames': List[Dict],        # List of frame dictionaries
         'frequencies': List[float],  # cm⁻¹ (None for XYZ)
@@ -650,8 +655,8 @@ True: All theoretical bond changes [(11, 12), (10, 14)] found in results.
     },
     'graph': {                       # Only if enable_graph=True
         'comparison': Dict,
-        'ts_graph': nx.Graph,
-        'frame1_graph': nx.Graph,
+        'ts_graph': nx.Graph,        # graph objects can be 
+        'frame1_graph': nx.Graph,    #    extracted if desired
         'frame2_graph': nx.Graph,
         'ascii_ts': str,
         'ascii_ref': str,
@@ -729,7 +734,7 @@ vib_analysis input.xyz --save-displacement --displacement-scale 2
 # Creates: input_F.xyz (forward), input_R.xyz (reverse)
 ```
 
-Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8. The direction is arbitrary. 
+Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8. The direction is arbitrary.  
 
 ### Custom Frame Selection
 
@@ -744,7 +749,7 @@ By default, frame 1 is the TS, and frames with maximum RMSD are selected automat
 
 ### Threshold Validation
 
-The default bond displacement threshold (0.4 Å) has been validated against a diverse set of 15 transition state systems. "Ground truth" bond changes were determined from IRC calculations.
+The default bond displacement threshold (0.4 Å) has been validated against a diverse set of 15 transition state systems. "Ground truth" bond changes were determined from IRC calculations (`examples/data/expected_results.py`).
 
 **Validation script:**
 ```bash
@@ -752,10 +757,10 @@ python examples/threshold_tuning.py
 ```
 
 **Results:** The default threshold of 0.4 Å combined with coupled proton detection provides optimal performance:
-- **100%** F1 score (balance of precision and recall)
-- **100%** detection rate (all expected bonds found)
-- **0%** false positive rate
-- **full accuracy of *all* vibrational bonds across *all* 15 transition states**  
+- **100%** F1 % score (balance of precision and recall, reported as a %)
+- **100%** detection rate % (all expected bonds found)
+- **0%** false positive rate %
+- **full accuracy of *all* vibrational bonds across *all* 16 transition states**  
 
 ![threshold tuning](images/threshold_optimization.png)
 

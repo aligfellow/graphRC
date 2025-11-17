@@ -111,7 +111,7 @@ def convert_orca(orca_file, mode, pltvib_path=None):
         if max_atom_index > 0:
             n_atoms = max_atom_index
     
-    
+    print(f"Determined number of atoms: {n_atoms}")
     if n_atoms is None:
         raise ValueError("Could not determine number of atoms from ORCA output.")
     

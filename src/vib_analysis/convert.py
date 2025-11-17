@@ -150,10 +150,9 @@ def convert_orca(orca_file, mode, pltvib_path=None):
         if os.path.exists(hess_file):
             print(f"INFO: orca_pltvib failed on {os.path.basename(orca_file)}, trying {os.path.basename(hess_file)}...")
             # For .hess files, use mode directly (no offset)
-            hess_mode = int(mode)
-            result = subprocess.run([pltvib_path, hess_file, str(hess_mode)], 
+            result = subprocess.run([pltvib_path, hess_file, str(orca_mode)], 
                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            expected_hess_output = f'{basename}.hess.v{hess_mode:03d}.xyz'
+            expected_hess_output = f'{basename}.hess.v{orca_mode:03d}.xyz'
             if os.path.exists(expected_hess_output):
                 # Rename to match expected pattern
                 orca_vib = f'{basename}.out.v{mode:03d}.xyz'

@@ -75,6 +75,43 @@ def convert_orca(orca_file, mode, pltvib_path=None):
         if "Number of atoms" in line:
             n_atoms = int(line.split()[-1])
             break
+    
+    # Try method 2: Parse from atom index table (xtb frequency-only outputs - very specific...)
+    if n_atoms is None:
+        max_atom_index = 0
+        in_atom_section = False
+        for line in lines:
+            # Detect start of atom index section
+            if "ID    Z sym.   atoms" in line:
+                in_atom_section = True
+                continue
+            # Detect end of atom section (empty line or next section)
+            if in_atom_section and line.strip() == "":
+                break
+            # Parse atom indices from the third column
+            if in_atom_section:
+                parts = line.split()
+                if len(parts) >= 3:
+                    # Third column onwards contains atom indices
+                    for token in parts[3:]:
+                        # Handle ranges like "3-6" and individual numbers like "1"
+                        token = token.rstrip(',')  # Remove trailing commas
+                        if '-' in token:
+                            start, end = token.split('-')
+                            try:
+                                max_atom_index = max(max_atom_index, int(end))
+                            except ValueError:
+                                continue
+                        else:
+                            try:
+                                max_atom_index = max(max_atom_index, int(token))
+                            except ValueError:
+                                continue
+        
+        if max_atom_index > 0:
+            n_atoms = max_atom_index
+    
+    
     if n_atoms is None:
         raise ValueError("Could not determine number of atoms from ORCA output.")
     

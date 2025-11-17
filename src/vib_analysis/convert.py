@@ -93,16 +93,38 @@ def convert_orca(orca_file, mode, pltvib_path=None):
         tmp_file = f'{basename}.tmp'
         with open(tmp_file, 'w') as f:
             f.writelines(lines[idx:])
-        subprocess.run([pltvib_path, tmp_file, str(orca_mode)], 
+        result = subprocess.run([pltvib_path, tmp_file, str(orca_mode)], 
                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         os.remove(tmp_file)
-        os.system(f'mv {basename}.tmp.v{orca_mode:03d}.xyz {basename}.out.v{orca_mode:03d}.xyz')
+        if result.returncode == 0 and os.path.exists(f'{basename}.tmp.v{orca_mode:03d}.xyz'):
+            os.system(f'mv {basename}.tmp.v{orca_mode:03d}.xyz {basename}.out.v{orca_mode:03d}.xyz')
     else:
-        subprocess.run([pltvib_path, orca_file, str(orca_mode)], 
+        result = subprocess.run([pltvib_path, orca_file, str(orca_mode)], 
                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
-    os.system(f'mv {basename}.out.v{orca_mode:03d}.xyz {basename}.out.v{mode:03d}.xyz')
-    orca_vib = f'{basename}.out.v{mode:03d}.xyz'
+    # Check if orca_pltvib succeeded on the .out file
+    expected_output = f'{basename}.out.v{orca_mode:03d}.xyz'
+    if os.path.exists(expected_output):
+        os.system(f'mv {basename}.out.v{orca_mode:03d}.xyz {basename}.out.v{mode:03d}.xyz')
+        orca_vib = f'{basename}.out.v{mode:03d}.xyz'
+    else:
+        # orca_pltvib failed - check for .hess file fallback
+        hess_file = f'{basename}.hess'
+        if os.path.exists(hess_file):
+            print(f"INFO: orca_pltvib failed on {os.path.basename(orca_file)}, trying {os.path.basename(hess_file)}...")
+            # For .hess files, use mode directly (no offset)
+            hess_mode = int(mode)
+            result = subprocess.run([pltvib_path, hess_file, str(hess_mode)], 
+                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            expected_hess_output = f'{basename}.hess.v{hess_mode:03d}.xyz'
+            if os.path.exists(expected_hess_output):
+                # Rename to match expected pattern
+                orca_vib = f'{basename}.out.v{mode:03d}.xyz'
+                os.rename(expected_hess_output, orca_vib)
+            else:
+                raise FileNotFoundError(f"orca_pltvib failed on both {os.path.basename(orca_file)} and {os.path.basename(hess_file)}.")
+        else:
+            raise FileNotFoundError(f"File {expected_output} not found after orca_pltvib. No .hess file available for fallback.")
     
     if not os.path.exists(orca_vib):
         raise FileNotFoundError(f"File {orca_vib} not found. Ensure ORCA output is correct.")

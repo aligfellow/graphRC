@@ -98,22 +98,10 @@ def build_internal_coordinates(
     atoms_list = [(symbols[i], tuple(positions[i])) 
                   for i in range(len(symbols))]
 
-    # xyzgraph base thresholds for flexible bond graph
-    threshold_h_nm = 0.42 * bond_tolerance
-    threshold_nm_nm = 0.5 * bond_tolerance 
-    threshold_h_m = 0.45 * bond_tolerance 
-    threshold_m_l = 0.65 # Keep metal-ligand as is - no scaling
-    threshold_h_h = 0.40 * bond_tolerance 
-    
     # 1. Build flexible graph for bonds
     G_bonds = build_graph(
         atoms=atoms_list,
-        threshold=1.0,  # No additional global scaling
-        threshold_h_nonmetal=threshold_h_nm,
-        threshold_nonmetal_nonmetal=threshold_nm_nm,
-        threshold_h_metal=threshold_h_m,
-        threshold_metal_ligand=threshold_m_l,
-        threshold_h_h=threshold_h_h,
+        threshold=bond_tolerance,  # No additional global scaling
         relaxed=relaxed,  # Use relaxed rules if specified
         quick=True,  # Fast mode - we don't need bond orders
         method='cheminf',
@@ -130,20 +118,13 @@ def build_internal_coordinates(
         
         augmented_bonds = set(ts_bonds)  # Start with TS
         
+        disp_threshold = None
         # Determine thresholds for displaced graphs
         if ig_flexible:
-            # Use bond_tolerance (same as TS)
-            disp_h_nm = 0.42 * bond_tolerance
-            disp_nm_nm = 0.5 * bond_tolerance
-            disp_h_m = 0.45 * bond_tolerance
-            disp_h_h = 0.40 * bond_tolerance
+            disp_threshold = bond_tolerance
             logger.debug("Using flexible thresholds for displaced graphs")
         else:
-            # Use xyzgraph defaults
-            disp_h_nm = 0.42
-            disp_nm_nm = 0.5
-            disp_h_m = 0.45
-            disp_h_h = 0.40
+            disp_threshold = 1.0
             logger.debug("Using default thresholds for displaced graphs")
         
         # Build displaced graphs and collect bonds
@@ -153,12 +134,7 @@ def build_internal_coordinates(
             
             G_disp = build_graph(
                 atoms=disp_atoms,
-                threshold=1.0,
-                threshold_h_nonmetal=disp_h_nm,
-                threshold_nonmetal_nonmetal=disp_nm_nm,
-                threshold_h_metal=disp_h_m,
-                threshold_metal_ligand=threshold_m_l,
-                threshold_h_h=disp_h_h,
+                threshold=disp_threshold,
                 relaxed=relaxed,
                 quick=True,
                 method='cheminf',

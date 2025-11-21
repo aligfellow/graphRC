@@ -299,6 +299,13 @@ def run_threshold_validation(output_file: str = None):
         f.write("BOND THRESHOLD VALIDATION\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("="*70 + "\n")
+
+        f.write("\nSoftware Versions:\n")
+        import vib_analysis
+        f.write(f"\tvib_analysis version: v{vib_analysis.__version__}\n")
+        import xyzgraph
+        f.write(f"\txyzgraph version: v{xyzgraph.__version__}\n")
+
         f.write(f"\nTest systems: {len(basenames)}\n")
         f.write(f"Systems: {', '.join(basenames)}\n")
         

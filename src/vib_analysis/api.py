@@ -147,6 +147,7 @@ def run_vib_analysis(
     input_file: str,
     mode: int = 0,
     ts_frame: int = config.DEFAULT_TS_FRAME,
+    frame_selection: str = config.FRAME_SELECTION,
     # Vibrational analysis parameters
     relaxed: bool = config.RELAXED,
     bond_tolerance: float = config.BOND_TOLERANCE,
@@ -177,12 +178,13 @@ def run_vib_analysis(
 ) -> Dict[str, Any]:
     """
     Complete vibrational trajectory analysis pipeline.
-    
+
     Args:
         input_file: XYZ trajectory or QM output file
         mode: Vibrational mode to analyze
         ts_frame: Frame index to use as TS reference
-        
+        frame_selection: Frame selection method ('rmsd' or 'bookend')
+
         bond_tolerance: Multiplier for bond detection cutoffs
         bond_threshold: Threshold for significant bond changes (Å)
         angle_threshold: Threshold for significant angle changes (degrees)
@@ -269,6 +271,7 @@ def run_vib_analysis(
     vib_results = analyze_internal_displacements(
         frames,
         ts_frame=ts_frame,
+        frame_selection=frame_selection,
         relaxed=relaxed,
         bond_tolerance=bond_tolerance,
         bond_threshold=bond_threshold,
@@ -302,6 +305,7 @@ def run_vib_analysis(
         vib_results = analyze_internal_displacements(
             frames,
             ts_frame=ts_frame,
+            frame_selection=frame_selection,
             bond_tolerance=bond_tolerance,
             bond_threshold=bond_threshold * 0.5,
             angle_threshold=angle_threshold * 0.5,

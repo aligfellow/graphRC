@@ -32,6 +32,9 @@ def main():
                        help='Vibrational mode to analyze (default: 0, ignored for XYZ)')
     parser.add_argument('--ts-frame', type=int, default=0,
                        help='Frame index to use as TS reference (default: 0)')
+    parser.add_argument('--frame-selection', '-fs', type=str, default=config.FRAME_SELECTION,
+                       choices=['rmsd', 'bookend'],
+                       help=f'Frame selection method: rmsd (maximally diverse) or bookend (first and last) (default: {config.FRAME_SELECTION})')
     
     # Vibrational analysis tolerances
     vib_group = parser.add_argument_group('vibrational analysis parameters')
@@ -136,6 +139,7 @@ def main():
             input_file=args.input,
             mode=args.mode,
             ts_frame=args.ts_frame,
+            frame_selection=args.frame_selection,
             # Vibrational parameters
             relaxed=args.relaxed,
             bond_tolerance=args.bond_tolerance,

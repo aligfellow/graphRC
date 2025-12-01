@@ -446,7 +446,7 @@ def select_most_diverse_frames(frames: List[Dict[str, Any]], top_n: int = 2) -> 
             rmsd_value = compute_rmsd(frames[i], frames[j])
             rmsd_matrix[i][j] = rmsd_value
             rmsd_matrix[j][i] = rmsd_value
-    
+
     # get the largest RMSD value from the matrix
     for i in range(len(frames)):
         for j in range(i + 1, len(frames)):
@@ -456,6 +456,13 @@ def select_most_diverse_frames(frames: List[Dict[str, Any]], top_n: int = 2) -> 
 
     selected_indices = indices
     return selected_indices
+
+
+def select_bookend_frames(frames: List[Dict[str, Any]]) -> List[int]:
+    """Select first and last frames (bookends)."""
+    if len(frames) < 2:
+        raise ValueError("Need at least 2 frames for bookend selection")
+    return [0, len(frames) - 1]
 
 def analyze_internal_displacements(
     xyz_file_or_frames: Union[str, List[Dict[str, Any]]],
@@ -467,16 +474,17 @@ def analyze_internal_displacements(
     coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
     coupled_proton_threshold: Union[float, bool] = config.COUPLED_PROTON_THRESHOLD,
     ts_frame: int = config.DEFAULT_TS_FRAME,
+    frame_selection: str = config.FRAME_SELECTION,
     independent_graphs: bool = False,
     ig_flexible: bool = config.IG_FLEXIBLE_DEFAULT,
 ) -> Dict[str, Any]:
     """
     Analyze vibrational displacements in trajectory to identify structural changes.
-    
+
     This is the main analysis function that identifies bonds, angles, and dihedrals
-    that change significantly across a trajectory. It selects the most diverse frames
-    and tracks coordinate changes.
-    
+    that change significantly across a trajectory. It selects frames based on the
+    specified method and tracks coordinate changes.
+
     Args:
         xyz_file_or_frames: Path to XYZ trajectory file or list of frame dicts
         bond_tolerance: Multiplier for xyzgraph bond detection thresholds
@@ -485,7 +493,8 @@ def analyze_internal_displacements(
         dihedral_threshold: Minimum dihedral change to report (degrees)
         coupled_motion_filter: Threshold for filtering coupled angle/dihedral changes (Å)
         ts_frame: Index of transition state frame to use as reference
-        
+        frame_selection: Frame selection method ('rmsd' or 'bookend')
+
     Returns:
         Dictionary containing:
             - bond_changes: Dict mapping bond tuples to (change, initial_value)
@@ -495,11 +504,11 @@ def analyze_internal_displacements(
             - minor_dihedral_changes: Dict of dihedrals coupled to bond changes
             - frame_indices: List of selected frame indices
             - atom_index_map: Dict mapping atom indices to symbols
-            
+
     Raises:
         TypeError: If xyz_file_or_frames is not str or list of frame dicts
         FileNotFoundError: If file path doesn't exist
-        ValueError: If trajectory has less than 2 frames
+        ValueError: If trajectory has less than 2 frames or invalid frame_selection
     """
     # Handle both file path and in-memory frames
     if isinstance(xyz_file_or_frames, str):
@@ -512,10 +521,21 @@ def analyze_internal_displacements(
             "list of frame dicts."
         )
 
-    # Select diverse frames FIRST (needed for independent_graphs mode)
-    selected_indices = select_most_diverse_frames(frames)
+    # Select frames based on method (needed for independent_graphs mode)
+    if frame_selection == 'rmsd':
+        selected_indices = select_most_diverse_frames(frames)
+        logger.info(f"Using RMSD-based frame selection")
+    elif frame_selection == 'bookend':
+        selected_indices = select_bookend_frames(frames)
+        logger.info(f"Using bookend frame selection (first and last)")
+    else:
+        raise ValueError(
+            f"Invalid frame_selection '{frame_selection}'. "
+            "Must be 'rmsd' or 'bookend'."
+        )
+
     selected_frames = [frames[i] for i in selected_indices]
-    
+
     logger.info(f"Using TS frame {ts_frame}, selected frames {selected_indices} for analysis")
     
     # Build internal coordinates with optional augmentation

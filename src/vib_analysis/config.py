@@ -42,6 +42,7 @@ ASCII_INCLUDE_H = False         # Show hydrogen atoms by default
 # Frame Selection
 # ============================================================================
 DEFAULT_TS_FRAME = 0            # Index of transition state frame
+FRAME_SELECTION = 'rmsd'        # Frame selection method: 'rmsd' or 'bookend'
 MAX_DISPLACEMENT_LEVEL = 4      # Maximum displacement amplitude level
 
 # ============================================================================

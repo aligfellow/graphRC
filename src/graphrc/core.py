@@ -8,7 +8,7 @@ from xyzgraph import DATA
 from . import config
 from .utils import calculate_distance, calculate_angle, calculate_dihedral
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 def read_xyz_trajectory(file_path: str) -> List[Dict[str, Any]]:
     """

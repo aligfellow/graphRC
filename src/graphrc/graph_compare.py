@@ -15,7 +15,7 @@ import logging
 from . import config
 from .utils import calculate_distance
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 # =====================================================================================
 # === GEOMETRY HELPERS ===

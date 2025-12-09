@@ -10,7 +10,7 @@ from typing import List, Tuple, Optional, Dict, Any
 from xyzgraph import DATA
 import cclib
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 
 def get_orca_pltvib_path():

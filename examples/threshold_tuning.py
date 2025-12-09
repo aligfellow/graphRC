@@ -30,8 +30,8 @@ from datetime import datetime
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from vib_analysis.api import run_vib_analysis
-from vib_analysis import config
+from graphrc.api import run_vib_analysis
+from graphrc import config
 from data.expected_results import EXPECTED_RESULTS
 
 
@@ -301,8 +301,8 @@ def run_threshold_validation(output_file: str = None):
         f.write("="*70 + "\n")
 
         f.write("\nSoftware Versions:\n")
-        import vib_analysis
-        f.write(f"\tvib_analysis version: v{vib_analysis.__version__}\n")
+        import graphrc
+        f.write(f"\tgraphRC version: v{graphrc.__version__}\n")
         import xyzgraph
         f.write(f"\txyzgraph version: v{xyzgraph.__version__}\n")
 

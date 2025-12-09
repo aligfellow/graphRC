@@ -32,7 +32,7 @@ from .graph_compare import analyze_displacement_graphs
 from .utils import write_trajectory_file, save_displacement_pair, setup_logging
 from .characterize import characterize_vib_mode
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 def collect_metadata(input_file: str, **params) -> Dict[str, Any]:
     """Collect runtime metadata for reproducibility. Only includes non-default parameters."""
@@ -223,7 +223,7 @@ def run_vib_analysis(
     if print_output or debug:
         # Print main header first
         print("=" * 80)
-        print(" " * 30 + "VIB_ANALYSIS")
+        print(" " * 32 + "GRAPHRC")
         print(" " * 12 + "Internal Coordinate Analysis of Vibrational Modes")
         print(" " * 26 + "A. S. Goodfellow, 2025")
         print("=" * 80)

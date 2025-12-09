@@ -1,8 +1,9 @@
-# vib_analysis: Internal Coordinate Analysis of Vibrational Modes
+# graphRC: Internal Coordinate Analysis of Vibrational Modes
 
 Identify bond formation/breaking, angle changes, and dihedral rotations from vibrational trajectories with graph-based transformation analysis.
 
-[![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis)
+[![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis) 
+[![PyPI Downloads](https://static.pepy.tech/badge/graphrc)](https://pepy.tech/projects/graphrc)
 
 ---
 
@@ -44,16 +45,16 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 
 ### From pypi
 ```bash
-pip install vib-analysis
+pip install graphrc
 ```
 
 ### From Source (*up-to-date*)
 ```bash
-git clone https://github.com/aligfellow/vib_analysis.git
-cd vib_analysis
+git clone https://github.com/aligfellow/graphRC.git
+cd graphRC
 pip install .
 # or simply
-pip install git+https://github.com/aligfellow/vib_analysis.git
+pip install git+https://github.com/aligfellow/graphRC.git
 ```
 
 ### Dependencies
@@ -72,13 +73,13 @@ pip install git+https://github.com/aligfellow/vib_analysis.git
 
 ```bash
 # Simple bond analysis
-vib_analysis trajectory.xyz
+graphrc trajectory.xyz
 
 # With analysis (characterization + graph + ASCII visualization)
-vib_analysis calculation.out --graph
+graphrc calculation.out --graph
 
 # Save structures for IRC calculations
-vib_analysis calculation.out --save-displacement
+graphrc calculation.out --save-displacement
 ```
 
 ---
@@ -113,13 +114,13 @@ vib_analysis calculation.out --save-displacement
     - `v sn2.v000.xyz` press `f` and then `q` ; then ```bash convert -delay 5 -loop 0 sn2*xpm sn2.gif```
 
 ```bash
-vib_analysis examples/data/sn2.v000.xyz
+graphrc examples/data/sn2.v000.xyz
 ```
 
 **Output:**
 ```
 ================================================================================
-                              VIB_ANALYSIS
+                                GRAPHRC
             Internal Coordinate Analysis of Vibrational Modes
                           A. S. Goodfellow, 2025
 ================================================================================
@@ -144,7 +145,7 @@ Bond (0, 5)  [C-Cl]  Δ =   1.355 Å,  Initial =   1.952 Å
 ![Dihedral Rotation](images/dihedral.gif)
 
 ```bash
-vib_analysis examples/data/dihedral.v000.xyz -g
+graphrc examples/data/dihedral.v000.xyz -g
 ```
 
 **Output (truncated):**
@@ -177,13 +178,13 @@ Dihedral (6, 0, 3, 7)  [F-C-C-F]  Δ =  43.778 °,  Initial =   0.002 °
 ![BIMP Rearrangement](images/bimp.gif)
 
 ```bash
-vib_analysis examples/data/bimp.v000.xyz
+graphrc examples/data/bimp.v000.xyz
 ```
 
 **Output:**
 ```
 ================================================================================
-                              VIB_ANALYSIS
+                                  GRAPHRC
             Internal Coordinate Analysis of Vibrational Modes
                           A. S. Goodfellow, 2025
 ================================================================================
@@ -212,14 +213,16 @@ Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
 ![BIMP Rearrangement zoom](images/bimp_zoom.gif)
 
 ```bash
-vib_analysis examples/data/bimp.out -g
+graphrc examples/data/bimp.out -g
 ```
 
 **Output (excerpt):**
 ```
-vib_analysis examples/data/bimp.out -g -as 2
+graphrc examples/data/bimp.out -g -as 2
 ================================================================================
-                              VIB_ANALYSIS
+                                  GRAPHRC
+            Internal Coordinate Analysis of Vibrational Modes
+                          A. S. Goodfellow, 2025
 ================================================================================
 
 Analyzed Mode 0: -333.88 cm⁻¹ (imaginary)
@@ -310,7 +313,7 @@ Bond (10, 14)  [C-C]  Δ =   0.426 Å,  Initial =   2.656 Å
 ### Example 5: Showing All Changes (Including Minor)
 
 ```bash
-vib_analysis examples/data/bimp.v000.xyz --all
+graphrc examples/data/bimp.v000.xyz --all
 ```
 
 Shows additional "Minor Angle Changes" and "Minor Dihedral Changes" sections with coupled secondary effects.
@@ -322,13 +325,13 @@ Shows additional "Minor Angle Changes" and "Minor Dihedral Changes" sections wit
 ![Large SN2](images/sn2_large.gif)
 
 ```bash
-vib_analysis examples/data/sn2_large.v000.xyz
+graphrc examples/data/sn2_large.v000.xyz
 ```
 
 **Output:**
 ```
 ================================================================================
-                              VIB_ANALYSIS
+                                GRAPHRC
             Internal Coordinate Analysis of Vibrational Modes
                           A. S. Goodfellow, 2025
 ================================================================================
@@ -357,13 +360,13 @@ Bond (0, 1)   [C-I]  Δ =   1.878 Å,  Initial =   2.563 Å
 ![Mn Hydrogenation](images/mn-h2.gif)
 
 ```bash
-vib_analysis examples/data/mn-h2.log --all
+graphrc examples/data/mn-h2.log --all
 ```
 
 **Output:**
 ```
 ================================================================================
-                              VIB_ANALYSIS
+                                GRAPHRC
             Internal Coordinate Analysis of Vibrational Modes
                           A. S. Goodfellow, 2025
 ================================================================================
@@ -416,20 +419,19 @@ Note: These dihedrals depend on other changes and may not be significant alone.
 ### Basic Usage
 
 ```bash
-vib_analysis <input_file> [options]
+graphrc <input_file> [options]
 ```
 
 ### Options
 ```text
-> vib_analysis -h
+> graphrc -h
 
-usage: vib_analysis [-h] [--version] [--cite] [--mode MODE] [--ts-frame TS_FRAME] [--relaxed] [--bond-tolerance BOND_TOLERANCE]
-                    [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD] [--dihedral-threshold DIHEDRAL_THRESHOLD]
-                    [--coupled-motion-filter COUPLED_MOTION_FILTER] [--coupled-proton-threshold COUPLED_PROTON_THRESHOLD] [--all] [--graph]
-                    [--method {cheminf,xtb}] [--charge CHARGE] [--multiplicity MULTIPLICITY] [--distance-tolerance DISTANCE_TOLERANCE]
-                    [--independent-graphs] [--ig-flexible] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
-                    [--save-displacement] [--displacement-scale DISPLACEMENT_SCALE] [--no-save] [--orca-path ORCA_PATH] [--debug]
-                    [input]
+usage: graphrc [-h] [--version] [--cite] [--mode MODE] [--ts-frame TS_FRAME] [--frame-selection {rmsd,bookend}] [--relaxed] [--bond-tolerance BOND_TOLERANCE]
+               [--bond-threshold BOND_THRESHOLD] [--angle-threshold ANGLE_THRESHOLD] [--dihedral-threshold DIHEDRAL_THRESHOLD] [--coupled-motion-filter COUPLED_MOTION_FILTER]
+               [--coupled-proton-threshold COUPLED_PROTON_THRESHOLD] [--all] [--graph] [--method {cheminf,xtb}] [--charge CHARGE] [--multiplicity MULTIPLICITY]
+               [--distance-tolerance DISTANCE_TOLERANCE] [--independent-graphs] [--ig-flexible] [--ascii-scale ASCII_SCALE] [--show-h] [--ascii-shells ASCII_SHELLS]
+               [--save-displacement] [--displacement-scale DISPLACEMENT_SCALE] [--no-save] [--orca-path ORCA_PATH] [--debug]
+               [input]
 
 Internal Coordinate Analysis of Vibrational Modes.
 
@@ -442,6 +444,8 @@ options:
   --cite                Show citation information and exit
   --mode MODE, -m MODE  Vibrational mode to analyze (default: 0, ignored for XYZ)
   --ts-frame TS_FRAME   Frame index to use as TS reference (default: 0)
+  --frame-selection {rmsd,bookend}, -fs {rmsd,bookend}
+                        Frame selection method: rmsd (maximally diverse) or bookend (first and last) (default: rmsd)
   --debug, -d           Enable debug output
 
 vibrational analysis parameters:
@@ -497,26 +501,26 @@ output options:
 
 ```bash
 # Adjust bond detection sensitivity
-vib_analysis input.xyz --bond-threshold 0.3
+graphrc input.xyz --bond-threshold 0.3
 
 # Adjust angle detection
-vib_analysis input.xyz --angle-threshold 15.0
+graphrc input.xyz --angle-threshold 15.0
 ```
 
 ### Graph Analysis Options
 
 ```bash
 # With ASCII visualization
-vib_analysis input.xyz -g --ascii-scale 2.5 --show-h
+graphrc input.xyz -g --ascii-scale 2.5 --show-h
 
 # Adjust display around reactive center
-vib_analysis input.xyz -g --ascii-shells 2
+graphrc input.xyz -g --ascii-shells 2
 
 # Set molecular charge
-vib_analysis input.xyz -g --charge -1
+graphrc input.xyz -g --charge -1
 
 # Use independent graph building (more rigorous for IRC/QRC trajectories)
-vib_analysis input.xyz -g --independent-graphs
+graphrc input.xyz -g --independent-graphs
 ```
 
 ### Independent Graph Building
@@ -524,14 +528,17 @@ vib_analysis input.xyz -g --independent-graphs
 By default, molecular graphs are built from TS geometry with bonding guided by the bond changes across the trajectory. The `--independent-graphs` (`-ig`) flag enables connectivity augmentation where displaced structure graphs are built independently and merged with TS connectivity:
 
 ```bash
-# Standard approach (TS-centric, default)
-vib_analysis irc_trajectory.xyz -g
+# Standard approach (TS-centric, default, uses maximally diverse rmsd frames and ts_frame=0)
+graphrc irc_trajectory.xyz -g
 
 # Independent approach (builds from actual geometries)
-vib_analysis irc_trajectory.xyz -g --independent-graphs
+graphrc irc_trajectory.xyz -g --independent-graphs
+
+# Independent approach (builds from actual geometries, with bookend frames and TS frame)
+graphrc irc_trajectory.xyz -g --independent-graphs --frame-selection bookend --ts-frame 5
 
 # Independent approach with flexible displaced connectivity
-vib_analysis irc_trajectory.xyz -g --independent-graphs --ig-flexible
+graphrc irc_trajectory.xyz -g --independent-graphs --ig-flexible
 ```
 
 **How it works:**
@@ -560,22 +567,22 @@ vib_analysis irc_trajectory.xyz -g --independent-graphs --ig-flexible
 
 ```bash
 # Save displaced structures
-vib_analysis input.xyz --save-displacement --displacement-scale 2
+graphrc input.xyz --save-displacement --displacement-scale 2
 # or
-vib_analysis input.xyz -sd -ds 2
+graphrc input.xyz -sd -ds 2
 
 
 # Don't save trajectory to disk
-vib_analysis input.xyz --no-save
+graphrc input.xyz --no-save
 
 # Specify ORCA path
-vib_analysis input.out --orca-path /bin/orca
+graphrc input.out --orca-path /bin/orca
 ```
 
 ### Complete Example
 
 ```bash
-vib_analysis bimp.out \
+graphrc bimp.out \
   --mode 0 \
   --graph \
   --debug \
@@ -592,7 +599,7 @@ See examples/examples.ipynb
 This function will return a dictionary of the results, and printing can be turned on to produce the same as the CLI
 For example:
 ```python
-from vib_analysis import run_vib_analysis
+from graphrc import run_vib_analysis
 
 xyz_trj = 'data/bimp.v000.xyz'
 # ORCA_PATH = os.system('which orca')
@@ -705,10 +712,10 @@ For systems involving proton transfers or H₂ coordination, a reduced threshold
 **CLI Usage:**
 ```bash
 # Custom threshold (enabled by default)
-vib_analysis input.xyz --coupled-proton-threshold 0.20
+graphrc input.xyz --coupled-proton-threshold 0.20
 
 # Disable feature
-vib_analysis input.xyz --coupled-proton-threshold false
+graphrc input.xyz --coupled-proton-threshold false
 ```
 
 **Python API:**
@@ -726,10 +733,10 @@ Generate structures for tight optimization to either side of the TS:
 
 ```bash
 # Default: ±1 amplitude (~0.2)
-vib_analysis input.xyz --save-displacement
+graphrc input.xyz --save-displacement
 
 # Higher amplitude: ±2 (~0.4)
-vib_analysis input.xyz --save-displacement --displacement-scale 2
+graphrc input.xyz --save-displacement --displacement-scale 2
 
 # Creates: input_F.xyz (forward), input_R.xyz (reverse)
 ```
@@ -740,7 +747,7 @@ Displacement scale 1-4 correspond to amplitudes of ~0.2, 0.4, 0.6, 0.8. The dire
 
 ```bash
 # Override TS frame
-vib_analysis input.xyz --ts-frame 5
+graphrc input.xyz --ts-frame 5
 ```
 
 By default, frame 1 is the TS, and frames with maximum RMSD are selected automatically.

@@ -12,7 +12,7 @@ import numpy as np
 from typing import List, Dict, Tuple, Any, Optional
 import logging
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 
 # ============================================================================

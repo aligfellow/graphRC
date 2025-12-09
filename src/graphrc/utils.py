@@ -11,7 +11,7 @@ import logging
 import numpy as np
 from typing import List, Optional, Tuple, Dict, Any
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 # Geometry calculation functions
 
@@ -98,7 +98,7 @@ def write_xyz(filename: str, symbols: List[str], positions: np.ndarray,
 
 def setup_logging(debug: bool = False) -> None:
     """
-    Configure logging for vib_analysis package.
+    Configure logging for graphRC package.
     
     Provides centralized logging setup for both CLI and API usage.
     In debug mode, prints a simple message before debug logging begins.

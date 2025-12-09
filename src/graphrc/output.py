@@ -10,7 +10,7 @@ import os
 from typing import Dict, Any, Optional, List
 import logging
 
-logger = logging.getLogger("vib_analysis")
+logger = logging.getLogger("graphrc")
 
 
 # =====================================================================================
@@ -21,7 +21,7 @@ def print_metadata_header(metadata: Dict[str, Any], trajectory: Dict[str, Any]) 
     """Print metadata information header with proper text wrapping."""
     import textwrap
 
-    print("\nVersion:        " + f"vib_analysis v{metadata['version']}")
+    print("\nVersion:        " + f"graphRC v{metadata['version']}")
     print("Dependency:     " + f"xyzgraph v{metadata['xyzgraph_version']}")
 
     # Wrap citation at 80 characters with proper indent
@@ -61,7 +61,7 @@ def print_analysis_results(
     
     Centralized output function used by both CLI and API.
     Provides consistent formatting for all analysis results.
-    Note: VIB_ANALYSIS header is printed by run_vib_analysis() before this function.
+    Note: GRAPHRC header is printed by run_vib_analysis() before this function.
     
     Args:
         results: Results dictionary from run_vib_analysis()

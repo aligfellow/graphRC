@@ -100,7 +100,7 @@ def main():
     
     # Handle --version flag
     if args.version:
-        print(f"vib_analysis {__version__}")
+        print(f"graphRC {__version__}")
         sys.exit(0)
     
     # Handle --cite flag

@@ -1,5 +1,17 @@
 # vib_analysis: Internal Coordinate Analysis of Vibrational Modes
 
+> [!WARNING]
+> This package has been renamed to **`graphRC`**.
+>
+> Please install the new package instead:
+>
+> ```bash
+> pip install graphRC
+> ```
+>
+> This package will receive no further updates.
+
+
 Identify bond formation/breaking, angle changes, and dihedral rotations from vibrational trajectories with graph-based transformation analysis.
 
 [![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis)

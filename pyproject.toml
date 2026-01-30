@@ -76,6 +76,7 @@ ignore = [
     "PLR0915", # Too many statements
     "PLR1702", # Too many nested-blocks
     "PLC0415", # Local imports which may be performance related
+    "PLR2004", # Magic numbers
 ]
 
 [tool.ruff.lint.per-file-ignores]

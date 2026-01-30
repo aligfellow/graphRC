@@ -1,3 +1,5 @@
+"""Core functions for building internal coordinates and analyzing vibrational modes."""
+
 import logging
 import os
 from itertools import combinations
@@ -143,7 +145,8 @@ def build_internal_coordinates(
             augmented_bonds.update(disp_bonds)
 
         logger.debug(
-            f"Augmented connectivity: {len(ts_bonds)} TS bonds + {len(augmented_bonds - ts_bonds)} new = {len(augmented_bonds)} total"
+            f"Augmented connectivity: {len(ts_bonds)} TS bonds + {len(augmented_bonds - ts_bonds)} "
+            f"new = {len(augmented_bonds)} total"
         )
         bonds = list(augmented_bonds)
     else:

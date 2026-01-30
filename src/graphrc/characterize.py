@@ -94,7 +94,8 @@ def detect_inversion_hub(
     hub_fraction = hub_count / len(dihedral_changes)
 
     logger.debug(
-        f"Hub analysis: atom {hub_atom} ({symbols[hub_atom]}) appears in {hub_count}/{len(dihedral_changes)} dihedrals ({hub_fraction:.1%})"
+        f"Hub analysis: atom {hub_atom} ({symbols[hub_atom]}) appears in {hub_count}/{len(dihedral_changes)} "
+        f"dihedrals ({hub_fraction:.1%})"
     )
 
     # Check if hub dominates (appears in at least min_hub_fraction of dihedrals)

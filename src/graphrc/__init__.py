@@ -1,3 +1,5 @@
+"""Internal coordinate analysis of vibrational modes."""
+
 from importlib.metadata import version
 
 __version__ = version("graphRC")

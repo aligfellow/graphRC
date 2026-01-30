@@ -206,7 +206,8 @@ def build_displaced_graphs(
         )
 
         logger.debug(
-            f"TS-centric graphs built: g1 +{len(bonds_g1)}/-{len(unbonds_g1)}, g2 +{len(bonds_g2)}/-{len(unbonds_g2)} bonds."
+            f"TS-centric graphs built: g1 +{len(bonds_g1)}/-{len(unbonds_g1)}, "
+            f"g2 +{len(bonds_g2)}/-{len(unbonds_g2)} bonds."
         )
 
     return g1, g2

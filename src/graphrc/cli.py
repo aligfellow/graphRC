@@ -32,7 +32,8 @@ def main():
         type=str,
         default=config.FRAME_SELECTION,
         choices=["rmsd", "bookend"],
-        help=f"Frame selection method: rmsd (maximally diverse) or bookend (first and last) (default: {config.FRAME_SELECTION})",
+        help=f"Frame selection method: rmsd (maximally diverse) or bookend (first and last) "
+        f"(default: {config.FRAME_SELECTION})",
     )
 
     # Vibrational analysis tolerances
@@ -71,13 +72,15 @@ def main():
         "--coupled-motion-filter",
         type=float,
         default=config.COUPLED_MOTION_FILTER,
-        help=f"Coupled motion filter for filtering coupled changes in Å (default: {config.COUPLED_MOTION_FILTER}, advanced)",
+        help=f"Coupled motion filter for filtering coupled changes in Å "
+        f"(default: {config.COUPLED_MOTION_FILTER}, advanced)",
     )
     vib_group.add_argument(
         "--coupled-proton-threshold",
         type=str,
         default=str(config.COUPLED_PROTON_THRESHOLD),
-        help=f'Reduced threshold for coupled proton transfers in Å (default: {config.COUPLED_PROTON_THRESHOLD}, use "false" to disable)',
+        help=f"Reduced threshold for coupled proton transfers in Å "
+        f'(default: {config.COUPLED_PROTON_THRESHOLD}, use "false" to disable)',
     )
     vib_group.add_argument("--all", "-a", action="store_true", help="Report all changes including minor ones")
 
@@ -104,13 +107,15 @@ def main():
         "--independent-graphs",
         "-ig",
         action="store_true",
-        help="Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use with IRC or QRC displaced trajectories)",
+        help="Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding "
+        "(more rigorous for use with IRC or QRC displaced trajectories)",
     )
     graph_group.add_argument(
         "--ig-flexible",
         "-igf",
         action="store_true",
-        help="Apply bond-tolerance to displaced graphs (with -ig). Default: displaced graphs use stricter xyzgraph defaults for more rigorous connectivity detection",
+        help="Apply bond-tolerance to displaced graphs (with -ig). "
+        "Default: displaced graphs use stricter xyzgraph defaults for more rigorous connectivity detection",
     )
 
     # ASCII visualization
@@ -139,7 +144,8 @@ def main():
         "-ds",
         type=int,
         default=config.DEFAULT_DISPLACEMENT_LEVEL,
-        help=f"Displacement level (1-{config.MAX_DISPLACEMENT_LEVEL}, ~0.2-0.8 amplitude) (default: {config.DEFAULT_DISPLACEMENT_LEVEL})",
+        help=f"Displacement level (1-{config.MAX_DISPLACEMENT_LEVEL}, ~0.2-0.8 amplitude) "
+        f"(default: {config.DEFAULT_DISPLACEMENT_LEVEL})",
     )
     output_group.add_argument(
         "--no-save", action="store_true", help="Do not save trajectory to disk (keep in memory only)"

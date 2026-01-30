@@ -162,7 +162,8 @@ def write_detailed_results(f, threshold: float, results: List[Dict], stats: Dict
             summary_parts = []
             if n_exp_bonds > 0 or n_det_bonds > 0:
                 summary_parts.append(
-                    f"Bonds: Expected={n_exp_bonds}, Detected={n_det_bonds}, Missing={n_miss_bonds}, Extra={n_extra_bonds}"
+                    f"Bonds: Expected={n_exp_bonds}, Detected={n_det_bonds}, Missing={n_miss_bonds}, "
+                    f"Extra={n_extra_bonds}"
                 )
             if result["expected_dihedrals"]:  # Only show if dihedrals are expected
                 summary_parts.append(

@@ -44,6 +44,7 @@ dev = [
 line-length = 120
 target-version = "py310"
 src = ["src", "tests"]
+exclude = ["examples"]
 
 [tool.ruff.lint]
 select = [
@@ -90,8 +91,9 @@ convention = "numpy"
 docstring-code-format = true
 
 # ===== ty =====
-[tool.ty]
+[tool.ty.src]
 # ty auto-detects src/ directory
+exclude = ["examples/"]
 
 # ===== Pytest =====
 [tool.pytest.ini_options]

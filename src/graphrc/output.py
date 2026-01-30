@@ -6,9 +6,9 @@ including vibrational coordinate changes, graph analysis results, and
 frequency information.
 """
 
-import os
-from typing import Dict, Any, Optional, List
 import logging
+import os
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("graphrc")
 
@@ -66,7 +66,6 @@ def print_analysis_results(results: Dict[str, Any], show_all: bool = False, mode
         show_all: If True, include minor angle and dihedral changes
         mode: Vibrational mode number (for frequency display)
     """
-
     # Frequency info
     frequencies = results["trajectory"].get("frequencies")
     print_frequency_info(frequencies, mode)
@@ -143,9 +142,9 @@ def print_mode_characterization(characterization: Dict[str, Any], vib_results: D
         center_sym = inversion["center_symbol"]
         hub_fraction = inversion["hub_fraction"]
         moving_group = inversion["moving_group"]
-        moving_atom = inversion["moving_atom"]
+        inversion["moving_atom"]
         max_disp = inversion["max_displacement"]
-        num_dihedrals = inversion["num_dihedrals"]
+        inversion["num_dihedrals"]
 
         print(f"\nInversion at atom {center_atom} ({center_sym})")
         print(f"  {hub_fraction:.0%} of dihedrals involve this atom")
@@ -271,7 +270,8 @@ def interpret_bond_order(order: float) -> str:
     Args:
         order: Numeric bond order value
 
-    Returns:
+    Returns
+    -------
         Human-readable bond order description
     """
     if abs(order - 1.0) < 0.1:
@@ -298,7 +298,7 @@ def print_graph_analysis(
         debug: If True, include ASCII visualization
     """
     comp = results["comparison"]
-    g_ts = results["ts_graph"]
+    results["ts_graph"]
     g1 = results["frame1_graph"]
     g2 = results["frame2_graph"]
 

@@ -3,19 +3,20 @@ Trajectory conversion utilities for QM output files.
 Handles ORCA and cclib-compatible formats.
 """
 
+import logging
 import os
 import subprocess
-import numpy as np
-import logging
-from typing import List, Tuple, Optional, Dict, Any
-from xyzgraph import DATA
+from typing import Any, Dict, List
+
 import cclib
+import numpy as np
+from xyzgraph import DATA
 
 logger = logging.getLogger("graphrc")
 
 
 def get_orca_pltvib_path():
-    """Find orca_pltvib executable in the same directory as orca"""
+    """Find orca_pltvib executable in the same directory as orca."""
     orca_path = os.popen("which orca").read().strip()
     if not orca_path:
         raise RuntimeError("ORCA not found in PATH. Please ensure ORCA is installed.")
@@ -30,7 +31,7 @@ def get_orca_pltvib_path():
 
 
 def get_orca_frequencies(orca_file):
-    """Extract vibrational frequencies from ORCA output"""
+    """Extract vibrational frequencies from ORCA output."""
     with open(orca_file, "r") as f:
         lines = f.readlines()
 
@@ -58,7 +59,7 @@ def get_orca_frequencies(orca_file):
 def convert_orca(orca_file, mode, pltvib_path=None):
     """
     Convert ORCA output to vibration trajectory string.
-    Returns: (frequencies, trajectory_xyz_string)
+    Returns: (frequencies, trajectory_xyz_string).
     """
     if pltvib_path is None:
         pltvib_path = get_orca_pltvib_path()
@@ -98,7 +99,7 @@ def convert_orca(orca_file, mode, pltvib_path=None):
                         # Handle ranges like "3-6" and individual numbers like "1"
                         token = token.rstrip(",")  # Remove trailing commas
                         if "-" in token:
-                            start, end = token.split("-")
+                            _start, end = token.split("-")
                             try:
                                 max_atom_index = max(max_atom_index, int(end))
                             except ValueError:
@@ -126,7 +127,7 @@ def convert_orca(orca_file, mode, pltvib_path=None):
     coord_indices = [i for i, line in enumerate(lines) if "CARTESIAN COORDINATES (ANGSTROEM)" in line]
 
     if len(freq_indices) > 1:
-        print(f"INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one.")
+        print("INFO: Multiple 'VIBRATIONAL FREQUENCIES' sections found. Using the last one.")
         idx = max(i for i in coord_indices if i < freq_indices[-1])
         tmp_file = f"{basename}.tmp"
         with open(tmp_file, "w") as f:
@@ -195,7 +196,7 @@ def convert_orca(orca_file, mode, pltvib_path=None):
 def parse_cclib_output(output_file, mode):
     """
     Parse QM output with cclib and generate trajectory.
-    Returns: (frequencies, trajectory_xyz_string)
+    Returns: (frequencies, trajectory_xyz_string).
     """
     mode = int(mode)
     amplitudes = [
@@ -270,7 +271,7 @@ def parse_xyz_string_to_frames(trj_data_str: str) -> List[Dict[str, Any]]:
             break
         if i + 1 >= len(lines):
             break
-        comment = lines[i + 1]
+        lines[i + 1]
         coords = []
         symbols = []
         for j in range(num_atoms):

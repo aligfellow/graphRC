@@ -6,11 +6,11 @@ xyzgraph for molecular graph construction and NetworkX for graph operations.
 Simplified to use distance-based detection and xyzgraph charge handling.
 """
 
-import numpy as np
-from typing import List, Tuple, Dict, Any, Optional
-from xyzgraph import build_graph, graph_to_ascii, DATA
-import networkx as nx
 import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+import networkx as nx
+from xyzgraph import build_graph, graph_to_ascii
 
 from . import config
 from .utils import calculate_distance
@@ -23,7 +23,7 @@ logger = logging.getLogger("graphrc")
 
 
 def _atoms_to_xyz_format(frame: Dict[str, Any]) -> List[Tuple[str, Tuple[float, float, float]]]:
-    """Convert frame dict to xyzgraph format: [(symbol, (x, y, z)), ...]"""
+    """Convert frame dict to xyzgraph format: [(symbol, (x, y, z)), ...]."""
     symbols = frame["symbols"]
     positions = frame["positions"]
     return [(symbols[i], tuple(positions[i])) for i in range(len(symbols))]
@@ -71,7 +71,8 @@ def build_ts_graph(
         charge: Molecular charge
         multiplicity: Spin multiplicity (auto-detected if None)
 
-    Returns:
+    Returns
+    -------
         NetworkX graph of transition state with bond annotations
     """
     atoms_xyz = _atoms_to_xyz_format(frame_ts)
@@ -146,7 +147,8 @@ def build_displaced_graphs(
         charge: Molecular charge
         multiplicity: Spin multiplicity
 
-    Returns:
+    Returns
+    -------
         (g1, g2): Tuple of graphs for frames_displaced[0] and frames_displaced[1]
     """
     if use_actual_geometries:
@@ -223,7 +225,8 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
         g1: First molecular graph
         g2: Second molecular graph
 
-    Returns:
+    Returns
+    -------
         Dictionary containing:
             - bonds_formed: Bonds present in g2 but not g1
             - bonds_broken: Bonds present in g1 but not g2
@@ -302,7 +305,8 @@ def analyze_displacement_graphs(
         ascii_include_h: Include hydrogens in ASCII rendering
         debug: Enable debug logging
 
-    Returns:
+    Returns
+    -------
         Dictionary with graph analysis results
     """
     ts_idx = internal_changes.get("ts_frame", 0)
@@ -436,7 +440,8 @@ def generate_ascii_summary(
         reactive_h_indices: List of H atom indices to always show (even if include_h=False)
         only_ts: If True, only generate TS ASCII (for rotations/inversions where bonding doesn't change)
 
-    Returns:
+    Returns
+    -------
         Dictionary with ASCII representations
     """
     try:

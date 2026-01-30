@@ -5,11 +5,11 @@ This module provides file I/O utilities for trajectories and displaced structure
 geometry calculations, and centralized logging configuration.
 """
 
-import os
-import sys
 import logging
+import os
+from typing import Any, Dict, List, Optional, Tuple
+
 import numpy as np
-from typing import List, Optional, Tuple, Dict, Any
 
 logger = logging.getLogger("graphrc")
 
@@ -24,7 +24,8 @@ def calculate_distance(positions: np.ndarray, i: int, j: int) -> float:
         positions: Nx3 array of atomic positions
         i, j: Atom indices
 
-    Returns:
+    Returns
+    -------
         Distance in Angstroms
     """
     return round(float(np.linalg.norm(positions[j] - positions[i])), 3)
@@ -38,7 +39,8 @@ def calculate_angle(positions: np.ndarray, i: int, j: int, k: int) -> float:
         positions: Nx3 array of atomic positions
         i, j, k: Atom indices
 
-    Returns:
+    Returns
+    -------
         Angle in degrees
     """
     v1 = positions[i] - positions[j]
@@ -59,7 +61,8 @@ def calculate_dihedral(positions: np.ndarray, i: int, j: int, k: int, l: int) ->
         positions: Nx3 array of atomic positions
         i, j, k, l: Atom indices
 
-    Returns:
+    Returns
+    -------
         Dihedral angle in degrees
     """
     b1 = positions[j] - positions[i]
@@ -125,7 +128,8 @@ def write_trajectory_file(trajectory_string: str, output_path: str) -> str:
         trajectory_string: Complete XYZ trajectory as string
         output_path: Path where file will be written
 
-    Returns:
+    Returns
+    -------
         The output path (same as input)
     """
     with open(output_path, "w") as f:
@@ -157,7 +161,8 @@ def write_displaced_structures(
       - Negative indices allowed (Python style)
       - Single index → only _F written
 
-    Returns:
+    Returns
+    -------
         List of written file paths
     """
     written = []
@@ -231,7 +236,8 @@ def save_displacement_pair(
         max_level: Maximum allowed scale
         print_output: Print status messages
 
-    Returns:
+    Returns
+    -------
         (forward_path, reverse_path) if successful, else None
     """
     n_frames = len(frames)

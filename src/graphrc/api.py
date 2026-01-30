@@ -6,11 +6,11 @@ including trajectory loading, internal coordinate analysis, and optional
 graph-based analysis.
 """
 
-import os
-import sys
 import logging
-from typing import List, Optional, Dict, Any
-from . import __version__, __citation__
+import os
+from typing import Any, Dict, Optional
+
+from . import __citation__, __version__
 
 try:
     import xyzgraph
@@ -22,11 +22,11 @@ except (ImportError, AttributeError):
     _xyzg_citation = None
 
 from . import config
-from .core import analyze_internal_displacements, read_xyz_trajectory
-from .convert import parse_cclib_output, convert_orca, get_orca_pltvib_path, parse_xyz_string_to_frames
-from .graph_compare import analyze_displacement_graphs
-from .utils import write_trajectory_file, save_displacement_pair, setup_logging
 from .characterize import characterize_vib_mode
+from .convert import convert_orca, get_orca_pltvib_path, parse_cclib_output, parse_xyz_string_to_frames
+from .core import analyze_internal_displacements, read_xyz_trajectory
+from .graph_compare import analyze_displacement_graphs
+from .utils import save_displacement_pair, setup_logging, write_trajectory_file
 
 logger = logging.getLogger("graphrc")
 
@@ -77,7 +77,8 @@ def load_trajectory(
         save_to_disk: Whether to save converted trajectory to disk
         print_output: Print status messages
 
-    Returns:
+    Returns
+    -------
         Dictionary with keys:
             - 'frames': List of ASE Atoms objects
             - 'frequencies': List of frequencies (None for XYZ input)
@@ -194,7 +195,8 @@ def run_vib_analysis(
         show_all: Show all changes including minor angles/dihedrals
         debug: Enable debug output
 
-    Returns:
+    Returns
+    -------
         Dictionary with keys:
             - 'trajectory': Trajectory metadata (frames, frequencies, file path)
             - 'vibrational': Internal coordinate analysis results
@@ -311,7 +313,7 @@ def run_vib_analysis(
             if still_nothing:
                 print("Still no significant changes detected (very small displacements).")
             else:
-                print(f"Found changes with relaxed thresholds.")
+                print("Found changes with relaxed thresholds.")
     else:
         vib_results["thresholds_relaxed"] = False
 

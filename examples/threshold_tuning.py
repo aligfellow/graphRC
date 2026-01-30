@@ -1,5 +1,5 @@
 """
-Threshold Validation
+Threshold Validation.
 
 This script validates the default bond displacement threshold by testing multiple
 values across a diverse set of transition state systems.
@@ -23,16 +23,17 @@ Output:
 """
 
 import sys
-from pathlib import Path
-from typing import Dict, List, Tuple, Set, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Set, Tuple
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from graphrc.api import run_vib_analysis
-from graphrc import config
 from data.expected_results import EXPECTED_RESULTS
+
+from graphrc import config
+from graphrc.api import run_vib_analysis
 
 
 def normalize_bond(bond: Tuple[int, int]) -> Tuple[int, int]:
@@ -42,7 +43,7 @@ def normalize_bond(bond: Tuple[int, int]) -> Tuple[int, int]:
 
 def normalize_bonds(bonds: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
     """Normalize a list of bonds to a set with consistent ordering."""
-    return set(normalize_bond(b) for b in bonds)
+    return {normalize_bond(b) for b in bonds}
 
 
 def test_single_system(
@@ -56,7 +57,8 @@ def test_single_system(
         basename: System name (without .v000.xyz extension)
         bond_threshold: Bond displacement threshold to test
 
-    Returns:
+    Returns
+    -------
         Dictionary with test results and statistics
     """
     data_dir = Path(__file__).parent / "data"
@@ -200,7 +202,7 @@ def write_detailed_results(f, threshold: float, results: List[Dict], stats: Dict
                     f.write(f"      Extra Dihedrals: {dihedrals_str}\n")
 
     # Write statistics
-    f.write(f"\n  Statistics:\n")
+    f.write("\n  Statistics:\n")
     f.write(f"    Detection Rate: {stats['correct']}/{stats['expected']} bonds ({stats['detection_rate']:.1f}%)\n")
     f.write(f"    False Positives: {stats['extra']} bonds ({stats['false_positive_rate']:.1f}%)\n")
     f.write(f"    F1 Score: {stats['f1_score']:.1f}%\n")
@@ -239,7 +241,7 @@ def plot_threshold_results(sweep_results: Dict[float, Dict], output_dir: Path):
     f1_scores = [sweep_results[t]["f1_score"] for t in thresholds]
 
     # Create figure
-    fig, ax = plt.subplots(figsize=(5, 5))
+    _fig, ax = plt.subplots(figsize=(5, 5))
 
     # Plot lines with markers using custom color ordering
     ax.plot(thresholds, detection_rates, marker="o", linewidth=3, markersize=8, label="Detection", color="teal")
@@ -279,7 +281,7 @@ def plot_threshold_results(sweep_results: Dict[float, Dict], output_dir: Path):
     print(f"\nPlot saved to: {output_path}")
 
 
-def run_threshold_validation(output_file: str = None):
+def run_threshold_validation(output_file: str | None = None):
     """
     Validate bond threshold across multiple values.
 
@@ -382,10 +384,10 @@ def run_threshold_validation(output_file: str = None):
         f.write(f"\n{'=' * 70}\n")
         f.write("SUMMARY\n")
         f.write(f"{'=' * 70}\n")
-        f.write(f"Metric Explanation:\n")
-        f.write(f"  Detection Rate: % of expected bonds found (Recall)\n")
-        f.write(f"  False Pos Rate: % of detected bonds that are incorrect\n")
-        f.write(f"  F1 Score: Harmonic mean of precision and recall\n\n")
+        f.write("Metric Explanation:\n")
+        f.write("  Detection Rate: % of expected bonds found (Recall)\n")
+        f.write("  False Pos Rate: % of detected bonds that are incorrect\n")
+        f.write("  F1 Score: Harmonic mean of precision and recall\n\n")
         f.write(f"{'Threshold':<12} {'Detection':<15} {'False Pos':<15} {'F1 Score':<12}\n")
         f.write("-" * 70 + "\n")
 

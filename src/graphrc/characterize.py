@@ -8,9 +8,10 @@ Uses topology-based analysis:
 No complex geometry calculations - just counting and simple logic.
 """
 
-import numpy as np
-from typing import List, Dict, Tuple, Any, Optional
 import logging
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 logger = logging.getLogger("graphrc")
 
@@ -31,7 +32,8 @@ def calculate_atom_displacement(
         frame_ts: TS frame dict
         frames_displaced: Displaced frame dicts
 
-    Returns:
+    Returns
+    -------
         Average displacement magnitude in Angstroms
     """
     pos_ts = frame_ts["positions"][atom_idx]
@@ -67,7 +69,8 @@ def detect_inversion_hub(
         symbols: List of atomic symbols
         min_hub_fraction: Minimum fraction of dihedrals hub must appear in
 
-    Returns:
+    Returns
+    -------
         (hub_atom_index, element_symbol, hub_fraction) if inversion detected, else None
     """
     if len(dihedral_changes) < 3:
@@ -77,7 +80,7 @@ def detect_inversion_hub(
 
     # Count occurrences of each atom in central positions (j and k)
     hub_counts = {}
-    for i, j, k, l in dihedral_changes.keys():
+    for _i, j, k, _l in dihedral_changes.keys():
         hub_counts[j] = hub_counts.get(j, 0) + 1
         hub_counts[k] = hub_counts.get(k, 0) + 1
 
@@ -123,7 +126,8 @@ def identify_moving_group(
         frames_displaced: Displaced frame dicts
         connectivity: Connectivity dictionary from build_internal_coordinates
 
-    Returns:
+    Returns
+    -------
         (neighbor_idx, displacement, description) of most mobile group
     """
     # Get neighbors from connectivity
@@ -182,7 +186,8 @@ def find_aromatic_rings(frame: Dict[str, Any], connectivity: Dict[int, set]) -> 
         frame: Frame dict
         connectivity: Connectivity dictionary from build_internal_coordinates
 
-    Returns:
+    Returns
+    -------
         List of rings, where each ring is a list of atom indices
     """
     symbols = frame["symbols"]
@@ -233,7 +238,7 @@ def find_aromatic_rings(frame: Dict[str, Any], connectivity: Dict[int, set]) -> 
                 if next_atom not in visited and len(path) < 6:
                     new_visited = visited.copy()
                     new_visited.add(next_atom)
-                    queue.append((next_atom, path + [next_atom], new_visited))
+                    queue.append((next_atom, [*path, next_atom], new_visited))
 
     return aromatic_rings
 
@@ -255,10 +260,11 @@ def classify_rotation_type(
         dihedral_change: Rotation magnitude (degrees)
         connectivity: Connectivity dictionary from build_internal_coordinates
 
-    Returns:
+    Returns
+    -------
         Dict with rotation characterization
     """
-    i, j, k, l = dihedral
+    _i, j, k, _l = dihedral
     symbols = frame_ts["symbols"]
 
     # Get neighbors from connectivity
@@ -382,7 +388,8 @@ def analyze_rotations(
         frame_ts: TS frame dict
         connectivity: Connectivity dictionary from build_internal_coordinates
 
-    Returns:
+    Returns
+    -------
         Dict mapping dihedrals to rotation characterizations
     """
     rotations = {}
@@ -416,14 +423,15 @@ def characterize_vib_mode(
         frames: Full trajectory frame dicts
         ts_frame_idx: Index of TS frame
 
-    Returns:
+    Returns
+    -------
         Dictionary with characterization results
     """
     bond_changes = internal_changes["bond_changes"]
     angle_changes = internal_changes["angle_changes"]
     dihedral_changes = internal_changes["dihedral_changes"]
     frame_indices = internal_changes["frame_indices"]
-    atom_index_map = internal_changes["atom_index_map"]
+    internal_changes["atom_index_map"]
 
     # Get TS and displaced frames
     frame_ts = frames[ts_frame_idx]

@@ -1,16 +1,11 @@
-"""
-Command-line interface for vibrational trajectory analysis.
-"""
+"""Command-line interface for vibrational trajectory analysis."""
 
 import argparse
 import os
 import sys
-import logging
-from . import __version__, __citation__
 
-from . import config
+from . import __citation__, __version__, config
 from .api import run_vib_analysis
-from .output import print_analysis_results
 
 
 def main():
@@ -196,7 +191,7 @@ def main():
 
     # Run analysis
     try:
-        results = run_vib_analysis(
+        run_vib_analysis(
             input_file=args.input,
             mode=args.mode,
             ts_frame=args.ts_frame,

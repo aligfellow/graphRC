@@ -1,12 +1,13 @@
-import numpy as np
-from itertools import combinations
-import os
 import logging
-from typing import List, Dict, Tuple, Any, Union, Optional
+import os
+from itertools import combinations
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import numpy as np
 from xyzgraph import DATA
 
 from . import config
-from .utils import calculate_distance, calculate_angle, calculate_dihedral
+from .utils import calculate_angle, calculate_dihedral, calculate_distance
 
 logger = logging.getLogger("graphrc")
 
@@ -18,10 +19,12 @@ def read_xyz_trajectory(file_path: str) -> List[Dict[str, Any]]:
     Args:
         file_path: Path to XYZ trajectory file
 
-    Returns:
+    Returns
+    -------
         List of frame dicts with 'symbols' and 'positions' keys, one per frame
 
-    Raises:
+    Raises
+    ------
         FileNotFoundError: If file doesn't exist
         ValueError: If only one geometry found (need at least 2 frames)
     """
@@ -66,7 +69,7 @@ def build_internal_coordinates(
     Build internal coordinates (bonds, angles, dihedrals) using xyzgraph with hierarchical thresholds.
     Uses two separate graphs:
     - Bond graph (flexible): captures forming/breaking bonds in TS
-    - Tighter graph: more conservative connectivity for angles/dihedrals
+    - Tighter graph: more conservative connectivity for angles/dihedrals.
 
     When independent_graphs=True:
     - TS connectivity built with bond_tolerance (flexible)
@@ -83,7 +86,8 @@ def build_internal_coordinates(
         relaxed: Use relaxed rules for xyzgraph (for complex ring systems)
         bond_tolerance: Multiplier for bond detection (most flexible)
 
-    Returns:
+    Returns
+    -------
         Dictionary with keys 'bonds', 'angles', 'dihedrals', 'connectivity'
     """
     from xyzgraph import build_graph
@@ -196,7 +200,8 @@ def _has_significant_bond_change(
         bond_changes: Dictionary of bond changes
         threshold: Minimum change threshold
 
-    Returns:
+    Returns
+    -------
         True if bond change exceeds threshold
     """
     sorted_bond = tuple(sorted(bond))
@@ -215,7 +220,8 @@ def _bonds_are_stable(
         bond_changes: Dictionary of bond changes
         threshold: Stability threshold
 
-    Returns:
+    Returns
+    -------
         True if all bonds are stable (below threshold)
     """
     return all(bond_changes.get(tuple(sorted(bond)), (0.0, 0.0))[0] < threshold for bond in bonds)
@@ -247,7 +253,8 @@ def calculate_internal_changes(
         dihedral_threshold: Minimum dihedral change to report (degrees)
         coupled_motion_filter: Threshold for filtering coupled angle/dihedral changes (Å)
 
-    Returns:
+    Returns
+    -------
         Tuple of (bond_changes, angle_changes, minor_angles,
                   unique_dihedrals, dependent_dihedrals, coupled_proton_bonds)
         Each dict maps coordinate tuple to (max_change, initial_value)
@@ -327,7 +334,7 @@ def calculate_internal_changes(
 
         if abs(max_change) >= angle_threshold:
             initial_angle = calculate_angle(ts_frame["positions"], i, j, k)
-            angle_atoms = set((i, j, k))
+            angle_atoms = {i, j, k}
 
             # Classify as minor if involves atoms from bond changes
             if angle_atoms.intersection(changed_atoms):
@@ -466,7 +473,8 @@ def analyze_internal_displacements(
         ts_frame: Index of transition state frame to use as reference
         frame_selection: Frame selection method ('rmsd' or 'bookend')
 
-    Returns:
+    Returns
+    -------
         Dictionary containing:
             - bond_changes: Dict mapping bond tuples to (change, initial_value)
             - angle_changes: Dict mapping angle tuples to (change, initial_value)
@@ -476,7 +484,8 @@ def analyze_internal_displacements(
             - frame_indices: List of selected frame indices
             - atom_index_map: Dict mapping atom indices to symbols
 
-    Raises:
+    Raises
+    ------
         TypeError: If xyz_file_or_frames is not str or list of frame dicts
         FileNotFoundError: If file path doesn't exist
         ValueError: If trajectory has less than 2 frames or invalid frame_selection
@@ -492,10 +501,10 @@ def analyze_internal_displacements(
     # Select frames based on method (needed for independent_graphs mode)
     if frame_selection == "rmsd":
         selected_indices = select_most_diverse_frames(frames)
-        logger.info(f"Using RMSD-based frame selection")
+        logger.info("Using RMSD-based frame selection")
     elif frame_selection == "bookend":
         selected_indices = select_bookend_frames(frames)
-        logger.info(f"Using bookend frame selection (first and last)")
+        logger.info("Using bookend frame selection (first and last)")
     else:
         raise ValueError(f"Invalid frame_selection '{frame_selection}'. Must be 'rmsd' or 'bookend'.")
 
@@ -528,7 +537,7 @@ def analyze_internal_displacements(
 
     first_frame = frames[0]
     symbols = first_frame["symbols"]
-    atom_index_map = {i: s for i, s in enumerate(symbols)}
+    atom_index_map = dict(enumerate(symbols))
 
     return {
         "bond_changes": bond_changes,

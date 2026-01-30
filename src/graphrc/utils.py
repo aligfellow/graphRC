@@ -243,9 +243,9 @@ def save_displacement_pair(
     n_frames = len(frames)
 
     if not (1 <= scale <= max_level):
-        logger.warning(f"Invalid scale {scale} (must be 1–{max_level})")
+        logger.warning(f"Invalid scale {scale} (must be 1-{max_level})")
         if print_output:
-            print(f"Invalid scale {scale} (must be 1–{max_level}).")
+            print(f"Invalid scale {scale} (must be 1-{max_level}).")
         return None
 
     # Calculate indices with wrapping support

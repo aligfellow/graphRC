@@ -53,13 +53,13 @@ def calculate_angle(positions: np.ndarray, i: int, j: int, k: int) -> float:
     return round(float(angle), 3)
 
 
-def calculate_dihedral(positions: np.ndarray, i: int, j: int, k: int, l: int) -> float:
+def calculate_dihedral(positions: np.ndarray, i: int, j: int, k: int, m: int) -> float:
     """
-    Calculate dihedral angle for atoms i-j-k-l.
+    Calculate dihedral angle for atoms i-j-k-m.
 
     Args:
         positions: Nx3 array of atomic positions
-        i, j, k, l: Atom indices
+        i, j, k, m: Atom indices (dihedral convention i-j-k-l, using m for linting)
 
     Returns
     -------
@@ -67,7 +67,7 @@ def calculate_dihedral(positions: np.ndarray, i: int, j: int, k: int, l: int) ->
     """
     b1 = positions[j] - positions[i]
     b2 = positions[k] - positions[j]
-    b3 = positions[l] - positions[k]
+    b3 = positions[m] - positions[k]
 
     n1 = np.cross(b1, b2)
     n2 = np.cross(b2, b3)

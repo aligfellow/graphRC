@@ -351,11 +351,11 @@ def calculate_internal_changes(
     # Process dihedral changes
     dihedral_changes = {}
 
-    for i, j, k, l in internal_coords["dihedrals"]:
-        bonds_in_dihedral = [(i, j), (j, k), (k, l)]
+    for i, j, k, m in internal_coords["dihedrals"]:  # dihedral convention i-j-k-l, using m for linting
+        bonds_in_dihedral = [(i, j), (j, k), (k, m)]
 
         # Skip if any bond in dihedral has significant change
-        if any(set(bond).issubset({i, j, k, l}) for bond in bond_changes):
+        if any(set(bond).issubset({i, j, k, m}) for bond in bond_changes):
             continue
 
         # Skip if bonds are not stable (some motion but not enough for reporting a bond change)
@@ -363,11 +363,11 @@ def calculate_internal_changes(
             continue
 
         # Calculate dihedral change (adjust for periodicity)
-        dihedrals = [calculate_dihedral(frame["positions"], i, j, k, l) for frame in frames]
+        dihedrals = [calculate_dihedral(frame["positions"], i, j, k, m) for frame in frames]
         max_change = round(max([abs((d - dihedrals[0] + 180) % 360 - 180) for d in dihedrals]), 3)
 
         if max_change >= angle_threshold:
-            dihedral_changes[(i, j, k, l)] = max_change
+            dihedral_changes[(i, j, k, m)] = max_change
 
     # Group dihedrals by rotation axis and select representative
     # Use atomic numbers as proxy for mass (heavier atoms have higher atomic numbers)
@@ -375,13 +375,13 @@ def calculate_internal_changes(
     atomic_numbers = [DATA.s2n[sym] for sym in symbols]
     dihedral_groups = {}
 
-    for (i, j, k, l), change in dihedral_changes.items():
+    for (i, j, k, m), change in dihedral_changes.items():  # dihedral convention i-j-k-l, using m for linting
         axis = tuple(sorted((j, k)))
-        total_atomic_number = atomic_numbers[i] + atomic_numbers[j] + atomic_numbers[k] + atomic_numbers[l]
+        total_atomic_number = atomic_numbers[i] + atomic_numbers[j] + atomic_numbers[k] + atomic_numbers[m]
 
         if axis not in dihedral_groups:
             dihedral_groups[axis] = []
-        dihedral_groups[axis].append(((i, j, k, l), change, total_atomic_number))
+        dihedral_groups[axis].append(((i, j, k, m), change, total_atomic_number))
 
     # Select most significant dihedral per axis
     unique_dihedrals = {}

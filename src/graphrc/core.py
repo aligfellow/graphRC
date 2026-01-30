@@ -69,6 +69,7 @@ def build_internal_coordinates(
 ) -> Dict[str, Any]:
     """
     Build internal coordinates (bonds, angles, dihedrals) using xyzgraph with hierarchical thresholds.
+
     Uses two separate graphs:
     - Bond graph (flexible): captures forming/breaking bonds in TS
     - Tighter graph: more conservative connectivity for angles/dihedrals.
@@ -410,7 +411,7 @@ def calculate_internal_changes(
 
 
 def compute_rmsd(frame1: Dict[str, Any], frame2: Dict[str, Any]) -> float:
-    """Computes RMSD between two frame dicts."""
+    """Compute RMSD between two frame dicts."""
     diff = frame1["positions"] - frame2["positions"]
     return np.sqrt(np.mean(np.sum(diff**2, axis=1)))
 

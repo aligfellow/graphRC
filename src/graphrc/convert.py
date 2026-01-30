@@ -1,5 +1,6 @@
 """
 Trajectory conversion utilities for QM output files.
+
 Handles ORCA and cclib-compatible formats.
 """
 
@@ -59,6 +60,7 @@ def get_orca_frequencies(orca_file):
 def convert_orca(orca_file, mode, pltvib_path=None):
     """
     Convert ORCA output to vibration trajectory string.
+
     Returns: (frequencies, trajectory_xyz_string).
     """
     if pltvib_path is None:
@@ -196,6 +198,7 @@ def convert_orca(orca_file, mode, pltvib_path=None):
 def parse_cclib_output(output_file, mode):
     """
     Parse QM output with cclib and generate trajectory.
+
     Returns: (frequencies, trajectory_xyz_string).
     """
     mode = int(mode)
@@ -259,6 +262,7 @@ def parse_cclib_output(output_file, mode):
 def parse_xyz_string_to_frames(trj_data_str: str) -> List[Dict[str, Any]]:
     """
     Parse XYZ trajectory string into list of frame dicts.
+
     Returns list of frames.
     """
     lines = trj_data_str.strip().split("\n")

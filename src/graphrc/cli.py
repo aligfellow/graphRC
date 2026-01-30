@@ -1,141 +1,204 @@
-"""
-Command-line interface for vibrational trajectory analysis.
-"""
+"""Command-line interface for vibrational trajectory analysis."""
+
 import argparse
 import os
 import sys
-import logging
-from . import __version__, __citation__
 
-from . import config
+from . import __citation__, __version__, config
 from .api import run_vib_analysis
-from .output import print_analysis_results
 
 
 def main():
+    """Parse arguments and run vibrational trajectory analysis."""
     parser = argparse.ArgumentParser(
-        description='Internal Coordinate Analysis of Vibrational Modes.',
+        description="Internal Coordinate Analysis of Vibrational Modes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    
+
     # Version and citation
-    parser.add_argument('--version', action='store_true',
-                       help='Show version information and exit')
-    parser.add_argument('--cite', action='store_true',
-                       help='Show citation information and exit')
-    
+    parser.add_argument("--version", action="store_true", help="Show version information and exit")
+    parser.add_argument("--cite", action="store_true", help="Show citation information and exit")
+
     # Input/output
-    parser.add_argument('input', nargs='?', help='Input file (XYZ trajectory or QM output)')
-    
+    parser.add_argument("input", nargs="?", help="Input file (XYZ trajectory or QM output)")
+
     # Mode selection
-    parser.add_argument('--mode', '-m', type=int, default=0,
-                       help='Vibrational mode to analyze (default: 0, ignored for XYZ)')
-    parser.add_argument('--ts-frame', type=int, default=0,
-                       help='Frame index to use as TS reference (default: 0)')
-    parser.add_argument('--frame-selection', '-fs', type=str, default=config.FRAME_SELECTION,
-                       choices=['rmsd', 'bookend'],
-                       help=f'Frame selection method: rmsd (maximally diverse) or bookend (first and last) (default: {config.FRAME_SELECTION})')
-    
+    parser.add_argument(
+        "--mode", "-m", type=int, default=0, help="Vibrational mode to analyze (default: 0, ignored for XYZ)"
+    )
+    parser.add_argument("--ts-frame", type=int, default=0, help="Frame index to use as TS reference (default: 0)")
+    parser.add_argument(
+        "--frame-selection",
+        "-fs",
+        type=str,
+        default=config.FRAME_SELECTION,
+        choices=["rmsd", "bookend"],
+        help=f"Frame selection method: rmsd (maximally diverse) or bookend (first and last) "
+        f"(default: {config.FRAME_SELECTION})",
+    )
+
     # Vibrational analysis tolerances
-    vib_group = parser.add_argument_group('vibrational analysis parameters')
-    vib_group.add_argument('--relaxed', '-r', action='store_true',
-                          help='Use more relaxed rules for xyzgraph bond detection (may result in spurious bonds)')
-    vib_group.add_argument('--bond-tolerance', type=float, default=config.BOND_TOLERANCE,
-                          help=f'Bond detection tolerance factor (default: {config.BOND_TOLERANCE})')
-    vib_group.add_argument('--bond-threshold', type=float, default=config.BOND_THRESHOLD,
-                          help=f'Threshold for significant bond changes in Å (default: {config.BOND_THRESHOLD})')
-    vib_group.add_argument('--angle-threshold', type=float, default=config.ANGLE_THRESHOLD,
-                          help=f'Threshold for significant angle changes in degrees (default: {config.ANGLE_THRESHOLD})')
-    vib_group.add_argument('--dihedral-threshold', type=float, default=config.DIHEDRAL_THRESHOLD,
-                          help=f'Threshold for significant dihedral changes in degrees (default: {config.DIHEDRAL_THRESHOLD})')
-    vib_group.add_argument('--coupled-motion-filter', type=float, default=config.COUPLED_MOTION_FILTER,
-                          help=f'Coupled motion filter for filtering coupled changes in Å (default: {config.COUPLED_MOTION_FILTER}, advanced)')
-    vib_group.add_argument('--coupled-proton-threshold', type=str, default=str(config.COUPLED_PROTON_THRESHOLD),
-                          help=f'Reduced threshold for coupled proton transfers in Å (default: {config.COUPLED_PROTON_THRESHOLD}, use "false" to disable)')
-    vib_group.add_argument('--all', '-a', action='store_true',
-                          help='Report all changes including minor ones')
-    
+    vib_group = parser.add_argument_group("vibrational analysis parameters")
+    vib_group.add_argument(
+        "--relaxed",
+        "-r",
+        action="store_true",
+        help="Use more relaxed rules for xyzgraph bond detection (may result in spurious bonds)",
+    )
+    vib_group.add_argument(
+        "--bond-tolerance",
+        type=float,
+        default=config.BOND_TOLERANCE,
+        help=f"Bond detection tolerance factor (default: {config.BOND_TOLERANCE})",
+    )
+    vib_group.add_argument(
+        "--bond-threshold",
+        type=float,
+        default=config.BOND_THRESHOLD,
+        help=f"Threshold for significant bond changes in Å (default: {config.BOND_THRESHOLD})",
+    )
+    vib_group.add_argument(
+        "--angle-threshold",
+        type=float,
+        default=config.ANGLE_THRESHOLD,
+        help=f"Threshold for significant angle changes in degrees (default: {config.ANGLE_THRESHOLD})",
+    )
+    vib_group.add_argument(
+        "--dihedral-threshold",
+        type=float,
+        default=config.DIHEDRAL_THRESHOLD,
+        help=f"Threshold for significant dihedral changes in degrees (default: {config.DIHEDRAL_THRESHOLD})",
+    )
+    vib_group.add_argument(
+        "--coupled-motion-filter",
+        type=float,
+        default=config.COUPLED_MOTION_FILTER,
+        help=f"Coupled motion filter for filtering coupled changes in Å "
+        f"(default: {config.COUPLED_MOTION_FILTER}, advanced)",
+    )
+    vib_group.add_argument(
+        "--coupled-proton-threshold",
+        type=str,
+        default=str(config.COUPLED_PROTON_THRESHOLD),
+        help=f"Reduced threshold for coupled proton transfers in Å "
+        f'(default: {config.COUPLED_PROTON_THRESHOLD}, use "false" to disable)',
+    )
+    vib_group.add_argument("--all", "-a", action="store_true", help="Report all changes including minor ones")
+
     # Graph analysis (includes mode characterization)
-    graph_group = parser.add_argument_group('graph analysis parameters')
-    graph_group.add_argument('--graph', '-g', action='store_true',
-                            help='Enable graph-based analysis and mode characterization (rotations, inversions, aromatic systems)')
-    graph_group.add_argument('--method', default='cheminf',
-                            choices=['cheminf', 'xtb'],
-                            help='Graph building method (default: cheminf)')
-    graph_group.add_argument('--charge', type=int, default=0,
-                            help='Molecular charge for graph building (default: 0)')
-    graph_group.add_argument('--multiplicity', type=int,
-                            help='Spin multiplicity (auto-detected if not specified)')
-    graph_group.add_argument('--distance-tolerance', type=float, default=config.DISTANCE_TOLERANCE,
-                            help=f'Tolerance for bond formation/breaking (default: {config.DISTANCE_TOLERANCE} Å)')
-    graph_group.add_argument('--independent-graphs', '-ig', action='store_true',
-                            help='Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding (more rigorous for use with IRC or QRC displaced trajectories)')
-    graph_group.add_argument('--ig-flexible', '-igf', action='store_true',
-                            help='Apply bond-tolerance to displaced graphs (with -ig). Default: displaced graphs use stricter xyzgraph defaults for more rigorous connectivity detection')
-    
+    graph_group = parser.add_argument_group("graph analysis parameters")
+    graph_group.add_argument(
+        "--graph",
+        "-g",
+        action="store_true",
+        help="Enable graph-based analysis and mode characterization (rotations, inversions, aromatic systems)",
+    )
+    graph_group.add_argument(
+        "--method", default="cheminf", choices=["cheminf", "xtb"], help="Graph building method (default: cheminf)"
+    )
+    graph_group.add_argument("--charge", type=int, default=0, help="Molecular charge for graph building (default: 0)")
+    graph_group.add_argument("--multiplicity", type=int, help="Spin multiplicity (auto-detected if not specified)")
+    graph_group.add_argument(
+        "--distance-tolerance",
+        type=float,
+        default=config.DISTANCE_TOLERANCE,
+        help=f"Tolerance for bond formation/breaking (default: {config.DISTANCE_TOLERANCE} Å)",
+    )
+    graph_group.add_argument(
+        "--independent-graphs",
+        "-ig",
+        action="store_true",
+        help="Build molecular graphs from the displaced geometries rather than TS geometry with guided bonding "
+        "(more rigorous for use with IRC or QRC displaced trajectories)",
+    )
+    graph_group.add_argument(
+        "--ig-flexible",
+        "-igf",
+        action="store_true",
+        help="Apply bond-tolerance to displaced graphs (with -ig). "
+        "Default: displaced graphs use stricter xyzgraph defaults for more rigorous connectivity detection",
+    )
+
     # ASCII visualization
-    ascii_group = parser.add_argument_group('ASCII rendering options')
-    ascii_group.add_argument('--ascii-scale', '-as', type=float, default=config.ASCII_SCALE,
-                            help=f'Scale for ASCII molecular rendering (default: {config.ASCII_SCALE})')
-    ascii_group.add_argument('--show-h', action='store_true',
-                            help='Show hydrogen atoms in ASCII rendering')
-    ascii_group.add_argument('--ascii-shells', '-ash', type=int, default=config.ASCII_NEIGHBOR_SHELLS,
-                            help=f'Neighbor shells around transformation core (default: {config.ASCII_NEIGHBOR_SHELLS})')
-    
+    ascii_group = parser.add_argument_group("ASCII rendering options")
+    ascii_group.add_argument(
+        "--ascii-scale",
+        "-as",
+        type=float,
+        default=config.ASCII_SCALE,
+        help=f"Scale for ASCII molecular rendering (default: {config.ASCII_SCALE})",
+    )
+    ascii_group.add_argument("--show-h", action="store_true", help="Show hydrogen atoms in ASCII rendering")
+    ascii_group.add_argument(
+        "--ascii-shells",
+        "-ash",
+        type=int,
+        default=config.ASCII_NEIGHBOR_SHELLS,
+        help=f"Neighbor shells around transformation core (default: {config.ASCII_NEIGHBOR_SHELLS})",
+    )
+
     # Output options
-    output_group = parser.add_argument_group('output options')
-    output_group.add_argument('--save-displacement', '-sd', action='store_true',
-                             help='Save displaced structure pair')
-    output_group.add_argument('--displacement-scale', '-ds', type=int, default=config.DEFAULT_DISPLACEMENT_LEVEL,
-                             help=f'Displacement level (1-{config.MAX_DISPLACEMENT_LEVEL}, ~0.2-0.8 amplitude) (default: {config.DEFAULT_DISPLACEMENT_LEVEL})')
-    output_group.add_argument('--no-save', action='store_true',
-                             help='Do not save trajectory to disk (keep in memory only)')
-    output_group.add_argument('--orca-path', help='Path to ORCA executable directory')
-    
+    output_group = parser.add_argument_group("output options")
+    output_group.add_argument("--save-displacement", "-sd", action="store_true", help="Save displaced structure pair")
+    output_group.add_argument(
+        "--displacement-scale",
+        "-ds",
+        type=int,
+        default=config.DEFAULT_DISPLACEMENT_LEVEL,
+        help=f"Displacement level (1-{config.MAX_DISPLACEMENT_LEVEL}, ~0.2-0.8 amplitude) "
+        f"(default: {config.DEFAULT_DISPLACEMENT_LEVEL})",
+    )
+    output_group.add_argument(
+        "--no-save", action="store_true", help="Do not save trajectory to disk (keep in memory only)"
+    )
+    output_group.add_argument("--orca-path", help="Path to ORCA executable directory")
+
     # Logging
-    parser.add_argument('--debug', '-d', action='store_true',
-                       help='Enable debug output')
-    
+    parser.add_argument("--debug", "-d", action="store_true", help="Enable debug output")
+
     args = parser.parse_args()
-    
+
     # Handle --version flag
     if args.version:
         print(f"graphRC {__version__}")
         sys.exit(0)
-    
+
     # Handle --cite flag
     if args.cite:
         print(f"Please cite as:\n{__citation__}")
         sys.exit(0)
-    
+
     # Check input file was provided and exists
     if not args.input:
         parser.print_help()
         sys.exit(1)
-    
+
     if not os.path.exists(args.input):
         print(f"Error: Input file '{args.input}' not found.", file=sys.stderr)
         sys.exit(1)
-    
+
     # Parse coupled_proton_threshold (convert string to float or False)
     coupled_proton_threshold = args.coupled_proton_threshold
-    if coupled_proton_threshold.lower() == 'false':
+    if coupled_proton_threshold.lower() == "false":
         coupled_proton_threshold = False
     else:
         try:
             coupled_proton_threshold = float(coupled_proton_threshold)
         except ValueError:
-            print(f"Error: --coupled-proton-threshold must be a number or 'false', got '{coupled_proton_threshold}'", file=sys.stderr)
+            print(
+                f"Error: --coupled-proton-threshold must be a number or 'false', got '{coupled_proton_threshold}'",
+                file=sys.stderr,
+            )
             sys.exit(1)
-    
+
     # Auto-enable -ig if -igf is used
     if args.ig_flexible and not args.independent_graphs:
         print("Warning: --ig-flexible requires -ig, automatically enabling -ig", file=sys.stderr)
         args.independent_graphs = True
-    
+
     # Run analysis
     try:
-        results = run_vib_analysis(
+        run_vib_analysis(
             input_file=args.input,
             mode=args.mode,
             ts_frame=args.ts_frame,
@@ -173,6 +236,7 @@ def main():
         if args.debug:
             raise
         sys.exit(1)
-    
+
+
 if __name__ == "__main__":
     main()

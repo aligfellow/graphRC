@@ -9,6 +9,7 @@ from .api import run_vib_analysis
 
 
 def main():
+    """Parse arguments and run vibrational trajectory analysis."""
     parser = argparse.ArgumentParser(
         description="Internal Coordinate Analysis of Vibrational Modes.",
         formatter_class=argparse.RawDescriptionHelpFormatter,

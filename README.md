@@ -822,7 +822,7 @@ Must contain ≥2 frames.
 
 ## Developer Setup
 
-To develop with `xyzgraph`, you can clone the repo and use
+To develop with `graphRC`, you can clone the repo and use
 [`just`](https://github.com/casey/just) and [`uv`](https://docs.astral.sh) to setup the dev environment:
 
 ```bash
@@ -830,7 +830,7 @@ just setup
 ```
 The cli can be used with:
 ```bash
-uv run xyzgraph filename.xyz
+uv run graphrc filename.out
 ```
 
 Run the checks using:

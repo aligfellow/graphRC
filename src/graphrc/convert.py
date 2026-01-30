@@ -135,14 +135,14 @@ def convert_orca(orca_file, mode, pltvib_path=None):
         with open(tmp_file, "w") as f:
             f.writelines(lines[idx:])
         result = subprocess.run(
-            [pltvib_path, tmp_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            [pltvib_path, tmp_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
         )
         os.remove(tmp_file)
         if result.returncode == 0 and os.path.exists(f"{basename}.tmp.v{orca_mode:03d}.xyz"):
             os.system(f"mv {basename}.tmp.v{orca_mode:03d}.xyz {basename}.out.v{orca_mode:03d}.xyz")
     else:
         result = subprocess.run(
-            [pltvib_path, orca_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            [pltvib_path, orca_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False
         )
 
     # Check if orca_pltvib succeeded on the .out file
@@ -157,7 +157,10 @@ def convert_orca(orca_file, mode, pltvib_path=None):
             print(f"INFO: orca_pltvib failed on {os.path.basename(orca_file)}, trying {os.path.basename(hess_file)}...")
             # For .hess files, use mode directly (no offset)
             result = subprocess.run(
-                [pltvib_path, hess_file, str(orca_mode)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                [pltvib_path, hess_file, str(orca_mode)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
             )
             expected_hess_output = f"{basename}.hess.v{orca_mode:03d}.xyz"
             if os.path.exists(expected_hess_output):

@@ -46,7 +46,7 @@ def normalize_bonds(bonds: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
     return {normalize_bond(b) for b in bonds}
 
 
-def test_single_system(
+def single_system_test(
     basename: str,
     bond_threshold: float = 0.4,
 ) -> Dict[str, Any]:
@@ -336,7 +336,7 @@ def run_threshold_validation(output_file: str | None = None):
 
             for basename in basenames:
                 try:
-                    result = test_single_system(basename, bond_threshold=threshold)
+                    result = single_system_test(basename, bond_threshold=threshold)
                     results.append(result)
 
                     total_expected += len(result["expected"])

@@ -233,7 +233,7 @@ def parse_cclib_output(output_file, mode):
         if parser is None:
             raise ValueError(f"cclib could not parse {output_file}.")
     except Exception as e:
-        raise ValueError(f"Error parsing {output_file} with cclib: {e}")
+        raise ValueError(f"Error parsing {output_file} with cclib: {e}") from e
 
     data = parser.parse()
 

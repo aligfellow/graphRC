@@ -208,8 +208,8 @@ def _has_significant_bond_change(
     -------
         True if bond change exceeds threshold
     """
-    sorted_bond = tuple(sorted(bond))
-    change_data = bond_changes.get(sorted_bond, (0.0, 0.0))
+    a, b = sorted(bond)
+    change_data = bond_changes.get((a, b), (0.0, 0.0))
     return change_data[0] >= threshold
 
 
@@ -228,7 +228,7 @@ def _bonds_are_stable(
     -------
         True if all bonds are stable (below threshold)
     """
-    return all(bond_changes.get(tuple(sorted(bond)), (0.0, 0.0))[0] < threshold for bond in bonds)
+    return all(bond_changes.get((min(bond), max(bond)), (0.0, 0.0))[0] < threshold for bond in bonds)
 
 
 def calculate_internal_changes(

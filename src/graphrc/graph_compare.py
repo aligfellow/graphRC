@@ -428,7 +428,7 @@ def generate_ascii_summary(
     include_h: bool = True,
     reactive_h_indices: Optional[List[int]] = None,
     only_ts: bool = False,
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     """
     Generate ASCII visualization for quick debugging.
 

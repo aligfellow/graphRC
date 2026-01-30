@@ -38,7 +38,8 @@ from graphrc.api import run_vib_analysis
 
 def normalize_bond(bond: Tuple[int, int]) -> Tuple[int, int]:
     """Normalize bond tuple to always have lower index first."""
-    return tuple(sorted(bond))
+    a, b = sorted(bond)
+    return (a, b)
 
 
 def normalize_bonds(bonds: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:

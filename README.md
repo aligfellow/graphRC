@@ -4,6 +4,12 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 
 [![PyPI Downloads](https://static.pepy.tech/badge/vib-analysis)](https://pepy.tech/projects/vib-analysis) 
 [![PyPI Downloads](https://static.pepy.tech/badge/graphrc)](https://pepy.tech/projects/graphrc)
+[![License](https://img.shields.io/github/license/aligfellow/graphrc)](https://github.com/aligfellow/graphrc/blob/main/LICENSE)
+[![Powered by: uv](https://img.shields.io/badge/-uv-purple)](https://docs.astral.sh/uv)
+[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+[![Typing: ty](https://img.shields.io/badge/typing-ty-EFC621.svg)](https://github.com/astral-sh/ty)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/aligfellow/graphrc/ci.yml?branch=uv_tests&logo=github-actions)](https://github.com/aligfellow/graphrc/actions)
+[![Codecov](https://img.shields.io/codecov/c/github/aligfellow/graphrc)](https://codecov.io/gh/aligfellow/graphrc)
 
 ---
 
@@ -813,3 +819,21 @@ Must contain ≥2 frames.
 - Visualization examples with [v.2.0](https://github.com/briling/v) by Ksenia Briling
 
 ---
+
+## Developer Setup
+
+To develop with `xyzgraph`, you can clone the repo and use
+[`just`](https://github.com/casey/just) and [`uv`](https://docs.astral.sh) to setup the dev environment:
+
+```bash
+just setup
+```
+The cli can be used with:
+```bash
+uv run xyzgraph filename.xyz
+```
+
+Run the checks using:
+```bash
+just check
+```

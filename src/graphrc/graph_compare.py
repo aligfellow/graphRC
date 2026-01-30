@@ -21,26 +21,29 @@ logger = logging.getLogger("graphrc")
 # === GEOMETRY HELPERS ===
 # =====================================================================================
 
+
 def _atoms_to_xyz_format(frame: Dict[str, Any]) -> List[Tuple[str, Tuple[float, float, float]]]:
     """Convert frame dict to xyzgraph format: [(symbol, (x, y, z)), ...]"""
-    symbols = frame['symbols']
-    positions = frame['positions']
+    symbols = frame["symbols"]
+    positions = frame["positions"]
     return [(symbols[i], tuple(positions[i])) for i in range(len(symbols))]
 
 
-def _get_distance_changes(frame_ts: Dict[str, Any], frames_displaced: List[Dict[str, Any]],
-                          bond: Tuple[int, int]) -> Dict[str, float]:
+def _get_distance_changes(
+    frame_ts: Dict[str, Any], frames_displaced: List[Dict[str, Any]], bond: Tuple[int, int]
+) -> Dict[str, float]:
     """Return direct distances for TS, displaced-1, displaced-2."""
     i, j = bond
-    d_ts = calculate_distance(frame_ts['positions'], i, j)
-    d_f1 = calculate_distance(frames_displaced[0]['positions'], i, j)
-    d_f2 = calculate_distance(frames_displaced[1]['positions'], i, j)
+    d_ts = calculate_distance(frame_ts["positions"], i, j)
+    d_f1 = calculate_distance(frames_displaced[0]["positions"], i, j)
+    d_f2 = calculate_distance(frames_displaced[1]["positions"], i, j)
     return {"ts": d_ts, "f1": d_f1, "f2": d_f2}
 
 
 # =====================================================================================
 # === CORE GRAPH BUILDERS ===
 # =====================================================================================
+
 
 def build_ts_graph(
     frame_ts: Dict[str, Any],
@@ -50,14 +53,14 @@ def build_ts_graph(
     distance_tolerance: float = config.DISTANCE_TOLERANCE,
     method: str = "cheminf",
     charge: int = 0,
-    multiplicity: Optional[int] = None
+    multiplicity: Optional[int] = None,
 ) -> nx.Graph:
     """
     Build transition-state reference graph using xyzgraph.
-    
+
     Bond formation/breaking decided from direct distance changes between
     TS and displaced frames.
-    
+
     Args:
         frame_ts: Transition state frame
         vib_bonds: List of bond tuples with significant changes
@@ -67,7 +70,7 @@ def build_ts_graph(
         method: Graph building method ('cheminf' or 'xtb')
         charge: Molecular charge
         multiplicity: Spin multiplicity (auto-detected if None)
-        
+
     Returns:
         NetworkX graph of transition state with bond annotations
     """
@@ -108,9 +111,7 @@ def build_ts_graph(
         else:
             g_ts.add_edge(i, j, vib_delta=delta, vib_initial=init_len, vib_identified=True, TS=True)
 
-    logger.debug(
-        f"TS graph built: +{len(bonds_to_add)} formed, -{len(bonds_to_remove)} broken bonds."
-    )
+    logger.debug(f"TS graph built: +{len(bonds_to_add)} formed, -{len(bonds_to_remove)} broken bonds.")
     return g_ts
 
 
@@ -121,21 +122,21 @@ def build_displaced_graphs(
     use_actual_geometries: bool = False,
     method: str = "cheminf",
     charge: int = 0,
-    multiplicity: Optional[int] = None
+    multiplicity: Optional[int] = None,
 ) -> Tuple[nx.Graph, nx.Graph]:
     """
     Build both displaced graphs either from TS geometry with guided bonding or from actual geometries.
-    
+
     When use_actual_geometries=False (default, TS-centric approach):
         - Bonding decisions based on distance comparison between displaced frames
         - If vib bond shorter in frame 1: add to g1's bond list, add to g2's unbond list
         - If vib bond shorter in frame 2: add to g2's bond list, add to g1's unbond list
-        
+
     When use_actual_geometries=True (independent approach):
         - Each graph built from its own actual displaced geometry
         - No guided bonding - xyzgraph determines connectivity from coordinates alone
         - More rigorous for IRC/QRC trajectories
-    
+
     Args:
         frame_ts: Transition state frame
         vib_bonds: List of bond tuples with significant changes
@@ -144,55 +145,45 @@ def build_displaced_graphs(
         method: Graph building method ('cheminf' or 'xtb')
         charge: Molecular charge
         multiplicity: Spin multiplicity
-        
+
     Returns:
         (g1, g2): Tuple of graphs for frames_displaced[0] and frames_displaced[1]
     """
     if use_actual_geometries:
         # Independent approach: build from actual displaced geometries
         logger.debug("Building graphs from actual displaced geometries (independent mode)")
-        
+
         atoms_xyz_f1 = _atoms_to_xyz_format(frames_displaced[0])
         atoms_xyz_f2 = _atoms_to_xyz_format(frames_displaced[1])
-        
-        g1 = build_graph(
-            atoms_xyz_f1,
-            method=method,
-            charge=charge,
-            multiplicity=multiplicity
-        )
-        
-        g2 = build_graph(
-            atoms_xyz_f2,
-            method=method,
-            charge=charge,
-            multiplicity=multiplicity
-        )
-        
+
+        g1 = build_graph(atoms_xyz_f1, method=method, charge=charge, multiplicity=multiplicity)
+
+        g2 = build_graph(atoms_xyz_f2, method=method, charge=charge, multiplicity=multiplicity)
+
         logger.debug("Independent graphs built from actual geometries")
-        
+
     else:
         # TS-centric approach: build from TS geometry with guided bonding
         logger.debug("Building graphs from TS geometry with guided bonding (TS-centric mode)")
-        
+
         atoms_xyz = _atoms_to_xyz_format(frame_ts)
-        
+
         bonds_g1 = []
         unbonds_g1 = []
         bonds_g2 = []
         unbonds_g2 = []
-        
-        for (i, j) in vib_bonds:
-            d1 = calculate_distance(frames_displaced[0]['positions'], i, j)
-            d2 = calculate_distance(frames_displaced[1]['positions'], i, j)
-            
+
+        for i, j in vib_bonds:
+            d1 = calculate_distance(frames_displaced[0]["positions"], i, j)
+            d2 = calculate_distance(frames_displaced[1]["positions"], i, j)
+
             if d1 < d2:  # Shorter in frame 1 → forming in g1, breaking in g2
                 bonds_g1.append((i, j))
                 unbonds_g2.append((i, j))
             elif d2 < d1:  # Shorter in frame 2 → breaking in g1, forming in g2
                 unbonds_g1.append((i, j))
                 bonds_g2.append((i, j))
-        
+
         # Build both graphs from TS geometry with guided bonding
         g1 = build_graph(
             atoms_xyz,
@@ -200,20 +191,22 @@ def build_displaced_graphs(
             charge=charge,
             multiplicity=multiplicity,
             bond=sorted(set(bonds_g1)),
-            unbond=sorted(set(unbonds_g1))
+            unbond=sorted(set(unbonds_g1)),
         )
-        
+
         g2 = build_graph(
             atoms_xyz,
             method=method,
             charge=charge,
             multiplicity=multiplicity,
             bond=sorted(set(bonds_g2)),
-            unbond=sorted(set(unbonds_g2))
+            unbond=sorted(set(unbonds_g2)),
         )
-        
-        logger.debug(f"TS-centric graphs built: g1 +{len(bonds_g1)}/-{len(unbonds_g1)}, g2 +{len(bonds_g2)}/-{len(unbonds_g2)} bonds.")
-    
+
+        logger.debug(
+            f"TS-centric graphs built: g1 +{len(bonds_g1)}/-{len(unbonds_g1)}, g2 +{len(bonds_g2)}/-{len(unbonds_g2)} bonds."
+        )
+
     return g1, g2
 
 
@@ -221,14 +214,15 @@ def build_displaced_graphs(
 # === GRAPH COMPARISON AND CHARGE REDISTRIBUTION ===
 # =====================================================================================
 
+
 def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
     """
     Compare two xyzgraph graphs for bond and charge differences.
-    
+
     Args:
         g1: First molecular graph
         g2: Second molecular graph
-        
+
     Returns:
         Dictionary containing:
             - bonds_formed: Bonds present in g2 but not g1
@@ -245,9 +239,9 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
 
     # Bond order changes for common bonds
     bond_order_changes = {}
-    for (i, j) in bonds_common:
-        order1 = g1[i][j].get('bond_order', 1)
-        order2 = g2[i][j].get('bond_order', 1)
+    for i, j in bonds_common:
+        order1 = g1[i][j].get("bond_order", 1)
+        order2 = g2[i][j].get("bond_order", 1)
         if abs(order1 - order2) > 0.1:
             bond_order_changes[(i, j)] = (order1, order2)
 
@@ -273,23 +267,24 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict[str, Any]:
 # === HIGH-LEVEL ANALYSIS PIPELINE ===
 # =====================================================================================
 
+
 def analyze_displacement_graphs(
-        frames: List[Dict[str, Any]],
-        internal_changes: Dict[str, Any],
-        atoms_of_interest: Optional[List[int]] = None,
-        method: str = "cheminf",
-        charge: int = 0,
-        multiplicity: Optional[int] = None,
-        distance_tolerance: float = 0.2,
-        independent_graphs: bool = False,
-        ascii_neighbor_shells: int = 1,
-        ascii_scale: float = 3.0,
-        ascii_include_h: bool = True,
-        debug: bool = False
-    ) -> Dict[str, Any]:
+    frames: List[Dict[str, Any]],
+    internal_changes: Dict[str, Any],
+    atoms_of_interest: Optional[List[int]] = None,
+    method: str = "cheminf",
+    charge: int = 0,
+    multiplicity: Optional[int] = None,
+    distance_tolerance: float = 0.2,
+    independent_graphs: bool = False,
+    ascii_neighbor_shells: int = 1,
+    ascii_scale: float = 3.0,
+    ascii_include_h: bool = True,
+    debug: bool = False,
+) -> Dict[str, Any]:
     """
     Full lightweight analysis: build TS + displaced graphs, classify bond and charge changes.
-    
+
     Args:
         frames: List of frame dictionaries
         internal_changes: Dictionary with bond changes and frame indices
@@ -306,7 +301,7 @@ def analyze_displacement_graphs(
         ascii_scale: Scale factor for ASCII rendering
         ascii_include_h: Include hydrogens in ASCII rendering
         debug: Enable debug logging
-        
+
     Returns:
         Dictionary with graph analysis results
     """
@@ -318,14 +313,27 @@ def analyze_displacement_graphs(
     frame_ts = frames[ts_idx]
     frames_disp = [frames[f1_idx], frames[f2_idx]]
 
-    g_ts = build_ts_graph(frame_ts, vib_bonds, vib_bond_info,
-                          frames_disp, distance_tolerance,
-                          method=method, charge=charge, multiplicity=multiplicity)
+    g_ts = build_ts_graph(
+        frame_ts,
+        vib_bonds,
+        vib_bond_info,
+        frames_disp,
+        distance_tolerance,
+        method=method,
+        charge=charge,
+        multiplicity=multiplicity,
+    )
 
     # Build displaced graphs (either from TS with guided bonding or actual geometries)
-    g1, g2 = build_displaced_graphs(frame_ts, vib_bonds, frames_disp,
-                                     use_actual_geometries=independent_graphs,
-                                     method=method, charge=charge, multiplicity=multiplicity)
+    g1, g2 = build_displaced_graphs(
+        frame_ts,
+        vib_bonds,
+        frames_disp,
+        use_actual_geometries=independent_graphs,
+        method=method,
+        charge=charge,
+        multiplicity=multiplicity,
+    )
 
     comparison = compare_graphs(g1, g2)
 
@@ -335,7 +343,7 @@ def analyze_displacement_graphs(
     if atoms_of_interest:
         reactive_atoms = set(atoms_of_interest)
         is_rotation_or_inversion = True
-        
+
         # Mark edges between atoms_of_interest with "TS" property for highlighting
         for i in atoms_of_interest:
             for j in atoms_of_interest:
@@ -343,7 +351,7 @@ def analyze_displacement_graphs(
                     g_ts[i][j]["TS"] = True
     else:
         reactive_atoms = set()
-        for (i, j) in vib_bonds:
+        for i, j in vib_bonds:
             reactive_atoms.update([i, j])
 
     # Expand by N shells (use union of neighbors from all graphs to stay consistent)
@@ -357,7 +365,7 @@ def analyze_displacement_graphs(
             if n in g2:
                 all_neighbors.update(g2.neighbors(n))
         reactive_atoms.update(all_neighbors)
-    
+
     # Extract consistent subgraphs
     sub_ts = g_ts.subgraph(sorted(reactive_atoms & set(g_ts.nodes))).copy()
     sub_1 = g1.subgraph(sorted(reactive_atoms & set(g1.nodes))).copy()
@@ -365,22 +373,24 @@ def analyze_displacement_graphs(
 
     # Identify reactive H atoms from vib_bonds for selective display
     reactive_h_indices = []
-    for (i, j) in vib_bonds:
-        if g_ts.nodes[i].get('symbol') == 'H':
+    for i, j in vib_bonds:
+        if g_ts.nodes[i].get("symbol") == "H":
             reactive_h_indices.append(i)
-        if g_ts.nodes[j].get('symbol') == 'H':
+        if g_ts.nodes[j].get("symbol") == "H":
             reactive_h_indices.append(j)
-    
+
     # Use subgraphs for ASCII visualization
     # For rotations/inversions, only show TS (bonding doesn't change)
     ascii_data = generate_ascii_summary(
-        sub_ts, sub_1, sub_2, 
-        scale=ascii_scale, 
+        sub_ts,
+        sub_1,
+        sub_2,
+        scale=ascii_scale,
         include_h=ascii_include_h,
         reactive_h_indices=reactive_h_indices,
-        only_ts=is_rotation_or_inversion
+        only_ts=is_rotation_or_inversion,
     )
-    
+
     results = {
         "ts_graph": g_ts,
         "frame1_graph": g1,
@@ -389,9 +399,8 @@ def analyze_displacement_graphs(
         "frame1_subgraph": sub_1,
         "frame2_subgraph": sub_2,
         "comparison": comparison,
-        **ascii_data
+        **ascii_data,
     }
-
 
     if debug:
         logger.debug(f"Bonds formed: {comparison['bonds_formed']}")
@@ -405,13 +414,19 @@ def analyze_displacement_graphs(
 # === OPTIONAL ASCII VISUALIZATION ===
 # =====================================================================================
 
-def generate_ascii_summary(graph_ts: nx.Graph, graph_1: nx.Graph, graph_2: nx.Graph,
-                           scale: float = 3.0, include_h: bool = True,
-                           reactive_h_indices: Optional[List[int]] = None,
-                           only_ts: bool = False) -> Dict[str, str]:
+
+def generate_ascii_summary(
+    graph_ts: nx.Graph,
+    graph_1: nx.Graph,
+    graph_2: nx.Graph,
+    scale: float = 3.0,
+    include_h: bool = True,
+    reactive_h_indices: Optional[List[int]] = None,
+    only_ts: bool = False,
+) -> Dict[str, str]:
     """
     Generate ASCII visualization for quick debugging.
-    
+
     Args:
         graph_ts: Transition state graph
         graph_1: First displaced frame graph
@@ -420,24 +435,25 @@ def generate_ascii_summary(graph_ts: nx.Graph, graph_1: nx.Graph, graph_2: nx.Gr
         include_h: Include all hydrogens if True
         reactive_h_indices: List of H atom indices to always show (even if include_h=False)
         only_ts: If True, only generate TS ASCII (for rotations/inversions where bonding doesn't change)
-        
+
     Returns:
         Dictionary with ASCII representations
     """
     try:
         # Pass reactive H indices to always show them, even when include_h=False
-        ascii_ts = graph_to_ascii(graph_ts, scale=scale, include_h=include_h, 
-                                  show_h_indices=reactive_h_indices)
-        
+        ascii_ts = graph_to_ascii(graph_ts, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices)
+
         if only_ts:
             # For rotations/inversions, skip Frame 1/2 (bonding is same)
             return {"ascii_ts": ascii_ts}
         else:
             # For bond changes, show all three
-            ascii_1 = graph_to_ascii(graph_1, scale=scale, include_h=include_h, 
-                                    show_h_indices=reactive_h_indices, reference=graph_ts)
-            ascii_2 = graph_to_ascii(graph_2, scale=scale, include_h=include_h,
-                                    show_h_indices=reactive_h_indices, reference=graph_ts)
+            ascii_1 = graph_to_ascii(
+                graph_1, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices, reference=graph_ts
+            )
+            ascii_2 = graph_to_ascii(
+                graph_2, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices, reference=graph_ts
+            )
             return {"ascii_ts": ascii_ts, "ascii_ref": ascii_1, "ascii_disp": ascii_2}
     except Exception as e:
         logger.warning(f"ASCII generation failed: {e}")

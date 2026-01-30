@@ -99,16 +99,16 @@ def convert_orca(orca_file, mode, pltvib_path=None):
                     # Third column onwards contains atom indices
                     for token in parts[3:]:
                         # Handle ranges like "3-6" and individual numbers like "1"
-                        token = token.rstrip(",")  # Remove trailing commas
-                        if "-" in token:
-                            _start, end = token.split("-")
+                        stripped_token = token.rstrip(",")  # Remove trailing commas
+                        if "-" in stripped_token:
+                            _start, end = stripped_token.split("-")
                             try:
                                 max_atom_index = max(max_atom_index, int(end))
                             except ValueError:
                                 continue
                         else:
                             try:
-                                max_atom_index = max(max_atom_index, int(token))
+                                max_atom_index = max(max_atom_index, int(stripped_token))
                             except ValueError:
                                 continue
 

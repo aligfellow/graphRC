@@ -387,7 +387,7 @@ def calculate_internal_changes(
     unique_dihedrals = {}
     dependent_dihedrals = {}
 
-    for axis, dihedrals_list in dihedral_groups.items():
+    for _axis, dihedrals_list in dihedral_groups.items():
         # Sort by atomic number sum and change magnitude
         dihedrals_sorted = sorted(dihedrals_list, key=lambda x: (x[2], x[1]), reverse=True)
         dihedral, max_change, _ = dihedrals_sorted[0]

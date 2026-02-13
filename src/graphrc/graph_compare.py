@@ -447,17 +447,17 @@ def generate_ascii_summary(
     """
     try:
         # Pass reactive H indices to always show them, even when include_h=False
-        ascii_ts = graph_to_ascii(graph_ts, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices)
+        ascii_ts, _ = graph_to_ascii(graph_ts, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices)
 
         if only_ts:
             # For rotations/inversions, skip Frame 1/2 (bonding is same)
             return {"ascii_ts": ascii_ts}
         else:
             # For bond changes, show all three
-            ascii_1 = graph_to_ascii(
+            ascii_1, _ = graph_to_ascii(
                 graph_1, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices, reference=graph_ts
             )
-            ascii_2 = graph_to_ascii(
+            ascii_2, _ = graph_to_ascii(
                 graph_2, scale=scale, include_h=include_h, show_h_indices=reactive_h_indices, reference=graph_ts
             )
             return {"ascii_ts": ascii_ts, "ascii_ref": ascii_1, "ascii_disp": ascii_2}

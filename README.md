@@ -11,8 +11,8 @@ Identify bond formation/breaking, angle changes, and dihedral rotations from vib
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/aligfellow/graphrc/ci.yml?branch=main&logo=github-actions)](https://github.com/aligfellow/graphrc/actions)
 [![Codecov](https://img.shields.io/codecov/c/github/aligfellow/graphrc)](https://codecov.io/gh/aligfellow/graphrc)
 
-> :memo: A.S. Goodfellow* and B.N. Nguyen, _ChemRxiv_, 2025, DOI: [10.26434/chemrxiv-2025-k69gt](www.doi.org/10.26434/chemrxiv-2025-k69gt).  
-> :newspaper: A.S. Goodfellow* and B.N. Nguyen, _J. Chem. Theory Comput._, 2026, DOI: [10.1021/acs.jctc.5c02073](www.doi.org/10.1021/acs.jctc.5c02073).  
+> :memo: A.S. Goodfellow* and B.N. Nguyen, _ChemRxiv_, 2025, DOI: [10.26434/chemrxiv-2025-k69gt](https://www.doi.org/10.26434/chemrxiv-2025-k69gt).  
+> :newspaper: A.S. Goodfellow* and B.N. Nguyen, _J. Chem. Theory Comput._, 2026, DOI: [10.1021/acs.jctc.5c02073](https://www.doi.org/10.1021/acs.jctc.5c02073).  
 
 ---
 

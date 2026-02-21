@@ -116,8 +116,13 @@ def setup_logging(debug: bool = False) -> None:
     else:
         level = logging.WARNING
 
-    # Configure logging
-    logging.basicConfig(level=level, format="[%(levelname)s] %(message)s", force=True)
+    # Configure graphrc logger only (avoid polluting third-party loggers)
+    graphrc_logger = logging.getLogger("graphrc")
+    graphrc_logger.setLevel(level)
+    if not graphrc_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+        graphrc_logger.addHandler(handler)
 
 
 def write_trajectory_file(trajectory_string: str, output_path: str) -> str:

@@ -36,7 +36,8 @@ def print_metadata_header(metadata: Dict[str, Any], trajectory: Dict[str, Any]) 
         )
         print(wrapped)
 
-    print("Input:          " + os.path.basename(metadata["input_file"]))
+    input_file = metadata["input_file"]
+    print("Input:          " + (os.path.basename(input_file) if input_file is not None else "in memory"))
 
     # Print non-default parameters if any
     if metadata["parameters"]:

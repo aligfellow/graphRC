@@ -7,7 +7,6 @@ Handles ORCA and cclib-compatible formats.
 import logging
 from typing import Any, Dict, List
 
-import cclib
 import numpy as np
 from xyzgraph import DATA
 
@@ -39,6 +38,60 @@ def _make_amplitudes(n_frames: int) -> np.ndarray:
     return np.where(t < 0.25, -4 * t, np.where(t < 0.75, 4 * t - 2, 4 - 4 * t))
 
 
+def _validate_mode(positions, mode):
+    """Validate Cartesian coordinates and mode without allowing broadcasting."""
+    positions = np.asarray(positions, dtype=float)
+    mode = np.asarray(mode, dtype=float)
+    if positions.ndim != 2 or positions.shape[1] != 3 or len(positions) == 0:
+        raise ValueError("positions must have shape (n_atoms, 3), with at least one atom")
+    if mode.shape != positions.shape:
+        raise ValueError(f"mode shape {mode.shape} does not match positions shape {positions.shape}")
+    if not np.isfinite(positions).all() or not np.isfinite(mode).all():
+        raise ValueError("positions and mode must contain only finite values")
+    return positions, mode
+
+
+def trajectory(symbols, positions, mode, n_frames: int = config.DEFAULT_N_FRAMES) -> List[Dict[str, Any]]:
+    """Return frame dictionaries from element symbols or atomic numbers, without file I/O.
+
+    Positions and mode are (n_atoms, 3) arrays in Å, used without normalization.
+    Frames span ``positions ± mode``; n_frames must be a positive multiple of 4.
+    """
+    amplitudes = _make_amplitudes(n_frames)
+    positions, mode = _validate_mode(positions, mode)
+    symbols = [DATA.n2s.get(symbol, symbol) for symbol in symbols]
+    if len(symbols) != len(positions):
+        raise ValueError("symbols must contain one element per atom")
+    if any(symbol not in DATA.s2n for symbol in symbols):
+        raise ValueError("symbols must contain valid element symbols or atomic numbers")
+    return [{"symbols": symbols.copy(), "positions": positions + amp * mode} for amp in amplitudes]
+
+
+def displace(positions, mode, scale: float = 1.0):
+    """Return forward and reverse arrays using ``positions ± 0.2 * scale * mode``.
+
+    Positions and mode must both have shape (n_atoms, 3), in Å. No mode
+    normalization is applied: a mode whose largest atomic displacement is 1 Å
+    gives a largest step of 0.2 Å at scale=1. Inputs are never modified.
+    """
+    positions, mode = _validate_mode(positions, mode)
+    if not np.isscalar(scale) or not np.isfinite(scale):
+        raise ValueError("scale must be a finite scalar")
+    step = 0.2 * scale * mode
+    return positions + step, positions - step
+
+
+def _trajectory_to_xyz(frames, mode, frequency):
+    """Format generated frames with the existing QM trajectory comments and precision."""
+    trj_data = ""
+    for amp, frame in zip(_make_amplitudes(len(frames)), frames):
+        trj_data += f"{len(frame['symbols'])}\n"
+        trj_data += f"Mode: {mode}, Frequency: {frequency:.2f} cm**-1, Amplitude: {amp:.2f}\n"
+        for sym, coord in zip(frame["symbols"], frame["positions"]):
+            trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
+    return trj_data
+
+
 def is_orca_output(filepath: str) -> bool:
     """Return True if the file contains the ORCA banner in its header."""
     try:
@@ -58,7 +111,9 @@ def parse_cclib_output(output_file, mode, n_frames: int = config.DEFAULT_N_FRAME
     Returns: (frequencies, trajectory_xyz_string).
     """
     mode = int(mode)
-    amplitudes = _make_amplitudes(n_frames)
+    validate_n_frames(n_frames)
+
+    import cclib
 
     try:
         parser = cclib.io.ccopen(output_file)
@@ -81,15 +136,8 @@ def parse_cclib_output(output_file, mode, n_frames: int = config.DEFAULT_N_FRAME
     atom_symbols = [DATA.n2s[z] for z in atom_numbers]
     eq_coords = data.atomcoords[-1]
     displacement = np.array(data.vibdisps[mode])
-    freq = freqs[mode]
-
-    trj_data = ""
-    for amp in amplitudes:
-        displaced = eq_coords + amp * displacement
-        trj_data += f"{len(atom_numbers)}\n"
-        trj_data += f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n"
-        for sym, coord in zip(atom_symbols, displaced):
-            trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
+    frames = trajectory(atom_symbols, eq_coords, displacement, n_frames)
+    trj_data = _trajectory_to_xyz(frames, mode, freqs[mode])
 
     return freqs, trj_data, displacement
 
@@ -109,7 +157,7 @@ def parse_orca_output(orca_file: str, mode: int, n_frames: int = config.DEFAULT_
     Returns: (frequencies, trajectory_xyz_string).
     """
     mode = int(mode)
-    amplitudes = _make_amplitudes(n_frames)
+    validate_n_frames(n_frames)
 
     with open(orca_file) as f:
         lines = f.readlines()
@@ -216,14 +264,8 @@ def parse_orca_output(orca_file: str, mode: int, n_frames: int = config.DEFAULT_
     displacement = np.array(mode_col).reshape(n_atoms, 3)
 
     # --------------------------------------------------------- build trajectory
-    freq = freqs[mode]
-    trj_data = ""
-    for amp in amplitudes:
-        displaced = eq + amp * displacement
-        trj_data += f"{n_atoms}\n"
-        trj_data += f"Mode: {mode}, Frequency: {freq:.2f} cm**-1, Amplitude: {amp:.2f}\n"
-        for sym, coord in zip(atom_symbols, displaced):
-            trj_data += f"{sym} {coord[0]:.6f} {coord[1]:.6f} {coord[2]:.6f}\n"
+    frames = trajectory(atom_symbols, eq, displacement, n_frames)
+    trj_data = _trajectory_to_xyz(frames, mode, freqs[mode])
 
     return freqs, trj_data, displacement
 

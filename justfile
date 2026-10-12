@@ -9,7 +9,7 @@ type:
     uv run ty check 
 
 test:
-    uv run pytest --cov --cov-report=xml
+    uv run pytest --cov --cov-report=xml -v
 
 fix:
     uv run ruff format .

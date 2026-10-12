@@ -10,6 +10,8 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
+import numpy as np
+
 from . import __citation__, __version__
 
 try:
@@ -28,6 +30,7 @@ from .convert import (
     parse_cclib_output,
     parse_orca_output,
     parse_xyz_string_to_frames,
+    trajectory,
     validate_n_frames,
 )
 from .core import analyze_internal_displacements, read_xyz_trajectory
@@ -37,7 +40,7 @@ from .utils import save_displacement_pair, setup_logging, write_trajectory_file
 logger = logging.getLogger("graphrc")
 
 
-def collect_metadata(input_file: str, **params) -> Dict[str, Any]:
+def collect_metadata(input_file: Optional[str], **params) -> Dict[str, Any]:
     """Collect runtime metadata for reproducibility. Only includes non-default parameters."""
     # Map parameters to their config defaults
     defaults = {
@@ -59,7 +62,7 @@ def collect_metadata(input_file: str, **params) -> Dict[str, Any]:
     return {
         "version": __version__,
         "citation": __citation__,
-        "input_file": os.path.abspath(input_file),
+        "input_file": os.path.abspath(input_file) if input_file is not None else None,
         "xyzgraph_version": _xyzg_version,
         "xyzgraph_citation": _xyzg_citation,
         "parameters": non_default_params,
@@ -279,6 +282,138 @@ def run_vib_analysis(
         print(f"Loaded {len(frames)} frames from trajectory")
         print(f"Using TS frame: {ts_frame}")
 
+    analysis_results = _analyse_frames(
+        frames,
+        ts_frame=ts_frame,
+        frame_selection=frame_selection,
+        relaxed=relaxed,
+        bond_tolerance=bond_tolerance,
+        bond_threshold=bond_threshold,
+        angle_threshold=angle_threshold,
+        dihedral_threshold=dihedral_threshold,
+        coupled_motion_filter=coupled_motion_filter,
+        coupled_proton_threshold=coupled_proton_threshold,
+        enable_graph=enable_graph,
+        graph_method=graph_method,
+        charge=charge,
+        multiplicity=multiplicity,
+        distance_tolerance=distance_tolerance,
+        independent_graphs=independent_graphs,
+        ig_flexible=ig_flexible,
+        ascii_scale=ascii_scale,
+        ascii_include_h=ascii_include_h,
+        ascii_neighbor_shells=ascii_neighbor_shells,
+        print_output=print_output,
+        debug=debug,
+    )
+
+    # Save displacement structures (optional)
+    displacement_files = None
+    if save_displacement:
+        output_prefix = os.path.splitext(os.path.basename(input_file))[0]
+        displacement_files = save_displacement_pair(
+            frames=frames,
+            ts_frame=ts_frame,
+            output_prefix=output_prefix,
+            scale=displacement_scale,
+            max_level=config.MAX_DISPLACEMENT_LEVEL,
+            mode_displacement=mode_displacement,
+            print_output=print_output,
+        )
+
+    # Build results dictionary (metadata already collected earlier)
+    results_dict = {
+        "metadata": metadata,
+        "trajectory": trajectory_data,
+        **analysis_results,
+        "displacement_files": displacement_files,
+    }
+
+    # Print formatted output if requested
+    if print_output:
+        from .output import print_analysis_results
+
+        print_analysis_results(
+            results_dict,
+            show_all=show_all or debug,  # Show all if requested or in debug mode
+            mode=mode,
+        )
+
+    return results_dict
+
+
+def analyse(
+    symbols,
+    positions,
+    mode,
+    *,
+    charge: int = 0,
+    multiplicity: Optional[int] = None,
+    frequency: Optional[float] = None,
+    enable_graph: bool = False,
+    n_frames: int = config.DEFAULT_N_FRAMES,
+    **thresholds,
+) -> Dict[str, Any]:
+    """Analyze arrays using the same parameters and result structure as ``run_vib_analysis``.
+
+    Positions and mode are (n_atoms, 3) arrays in Å, used without normalization.
+    Frames span ``positions ± mode``; frequency only labels results in cm⁻¹.
+    No trajectories or displacement pairs are saved; xTB uses scratch files.
+    """
+    frames = trajectory(symbols, positions, mode, n_frames)
+    analysis_results = _analyse_frames(
+        frames,
+        charge=charge,
+        multiplicity=multiplicity,
+        enable_graph=enable_graph,
+        print_output=False,
+        debug=False,
+        **thresholds,
+    )
+    metadata_params = {
+        k: v for k, v in thresholds.items() if enable_graph or k not in ("graph_method", "independent_graphs")
+    }
+    return {
+        "metadata": collect_metadata(
+            None, enable_graph=enable_graph, charge=charge if enable_graph else None, **metadata_params
+        ),
+        "trajectory": {
+            "frames": frames,
+            "frequencies": [frequency] if frequency is not None else None,
+            "trajectory_file": None,
+            "mode_displacement": np.asarray(mode, dtype=float).copy(),
+        },
+        **analysis_results,
+        "displacement_files": None,
+    }
+
+
+def _analyse_frames(
+    frames,
+    *,
+    ts_frame: int = config.DEFAULT_TS_FRAME,
+    frame_selection: str = config.FRAME_SELECTION,
+    relaxed: bool = config.RELAXED,
+    bond_tolerance: float = config.BOND_TOLERANCE,
+    bond_threshold: float = config.BOND_THRESHOLD,
+    angle_threshold: float = config.ANGLE_THRESHOLD,
+    dihedral_threshold: float = config.DIHEDRAL_THRESHOLD,
+    coupled_motion_filter: float = config.COUPLED_MOTION_FILTER,
+    coupled_proton_threshold=config.COUPLED_PROTON_THRESHOLD,
+    enable_graph: bool = False,
+    graph_method: str = "cheminf",
+    charge: int = 0,
+    multiplicity: Optional[int] = None,
+    distance_tolerance: float = config.DISTANCE_TOLERANCE,
+    independent_graphs: bool = False,
+    ig_flexible: bool = config.IG_FLEXIBLE_DEFAULT,
+    ascii_scale: float = config.ASCII_SCALE,
+    ascii_include_h: bool = config.ASCII_INCLUDE_H,
+    ascii_neighbor_shells: int = config.ASCII_NEIGHBOR_SHELLS,
+    print_output: bool = False,
+    debug: bool = False,
+) -> Dict[str, Any]:
+    """Run the shared analysis pipeline on frames, without file loading or saving."""
     # Analyze internal coordinates
     vib_results = analyze_internal_displacements(
         frames,
@@ -401,38 +536,8 @@ def run_vib_analysis(
             debug=debug,
         )
 
-    # Save displacement structures (optional)
-    displacement_files = None
-    if save_displacement:
-        output_prefix = os.path.splitext(os.path.basename(input_file))[0]
-        displacement_files = save_displacement_pair(
-            frames=frames,
-            ts_frame=ts_frame,
-            output_prefix=output_prefix,
-            scale=displacement_scale,
-            max_level=config.MAX_DISPLACEMENT_LEVEL,
-            mode_displacement=mode_displacement,
-            print_output=print_output,
-        )
-
-    # Build results dictionary (metadata already collected earlier)
-    results_dict = {
-        "metadata": metadata,
-        "trajectory": trajectory_data,
+    return {
         "vibrational": vib_results,
         "characterization": characterization,
         "graph": graph_results,
-        "displacement_files": displacement_files,
     }
-
-    # Print formatted output if requested
-    if print_output:
-        from .output import print_analysis_results
-
-        print_analysis_results(
-            results_dict,
-            show_all=show_all or debug,  # Show all if requested or in debug mode
-            mode=mode,
-        )
-
-    return results_dict

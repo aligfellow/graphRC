@@ -614,6 +614,21 @@ graphrc bimp.out \
 
 ## Python API
 
+For a geometry and mode already in memory (no ASE dependency):
+
+```python
+import graphrc
+
+results = graphrc.analyse(symbols, positions, mode, enable_graph=True)
+forward, reverse = graphrc.displace(positions, mode)
+frames = graphrc.trajectory(symbols, positions, mode)
+```
+
+`positions` and `mode` are `(n_atoms, 3)` arrays in Å, used without normalization.
+`trajectory` spans `positions ± mode`; `displace` returns `positions ± 0.2 * scale * mode`.
+`analyse` returns the same result structure as `run_vib_analysis`, without saving
+trajectories or displacement pairs.
+
 See examples/examples.ipynb
 This function will return a dictionary of the results, and printing can be turned on to produce the same as the CLI
 For example:
